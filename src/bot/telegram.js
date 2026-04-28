@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import fs from 'fs';
 import cron from 'node-cron';
 import { config } from '../config/env.js';
-import { parseNaturalLanguage } from '../services/gemini.js';
+import { parseNaturalLanguage, answerWithInternet } from '../services/gemini.js';
 import { createEvent, listUpcomingEvents, deleteEventById, searchEvent, updateEvent } from '../services/calendar.js';
 import { addHours } from 'date-fns';
 
@@ -141,6 +141,14 @@ export function setupBot() {
         case 'update_event':
           updateMemory(chatId, "Bot", `Petició per actualitzar: ${data.target_event_reference}`);
           await handleUpdateRequest(chatId, data);
+          break;
+        case 'weather_query':
+        case 'internet_search':
+          updateMemory(chatId, "Bot", "Cerca a internet/temps en procés...");
+          bot.sendChatAction(chatId, 'typing');
+          const answer = await answerWithInternet(data.search_query || text, historyStr);
+          updateMemory(chatId, "Bot", answer);
+          bot.sendMessage(chatId, answer);
           break;
         case 'update_preferences':
           updateMemory(chatId, "Bot", "Canvi de preferències");

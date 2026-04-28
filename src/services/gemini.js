@@ -14,7 +14,8 @@ Data i hora actual local: ${currentDateString}
 
 Has de retornar ÚNICAMENT un JSON vàlid amb aquesta estructura exacta:
 {
-  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "general_chat",
+  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "weather_query" | "internet_search" | "general_chat",
+  "search_query": "Consulta per buscar a internet o lloc per saber-ne el temps (si aplica)",
   "target_event_reference": "Nom de l'esdeveniment a modificar/esborrar (si aplica)",
   "title": "Títol descriptiu i complet de l'esdeveniment",
   "description": "Descripció o detalls addicionals",
@@ -33,7 +34,10 @@ Has de retornar ÚNICAMENT un JSON vàlid amb aquesta estructura exacta:
   "reply_message": "Missatge d'ajuda o resposta conversacional"
 }
 
-Regles CRÍTIQUES de funcionament:
+Regles CRÍTIQUES per ESTALVIAR TOKENS:
+- OMET qualsevol clau del JSON que sigui null, buida o no necessària per a la intenció actual. Si una clau no fa falta, no la incloguis.
+
+Altres regles:
 1. TÍTOLS RICS: El camp "title" ha de ser altament descriptiu. Si l'usuari menciona una empresa, departament o persona, format-ho com un títol professional (Ex: "Reunió RRHH - Teixidó Associats").
 2. Per l'intent "query_agenda":
    - Si pregunta en general ("propers", "quins tinc"), posa "date" i "date_end" a null.
@@ -42,7 +46,8 @@ Regles CRÍTIQUES de funcionament:
 4. Sigues tolerant amb faltes d'ortografia o llenguatge col·loquial. Dona un confidence alt sempre que entenguis la idea. Si reps un ÀUDIO, transcriu i dedueix la intenció.
 5. Utilitza l'HISTORIAL RECENT per entendre el context. Si diu "mou-ho a les 6", busca a l'historial de quin esdeveniment estava parlant i utilitza l'intent "update_event" omplint el target_event_reference corresponent.
 6. El "time" sempre en 24h. Si no especifica hora, null. "duration_minutes" és recomanable deduir-lo de la conversa o deixar-lo en null.
-7. Respon sempre en català.
+7. INTERNET I TEMPS: Si l'usuari pregunta pel temps o vol buscar informació general (ex: "qui va guanyar el partit?", "quin temps fa a Madrid?"), assigna l'intent "weather_query" o "internet_search" segons correspongui i posa la pregunta directa a "search_query".
+8. Respon sempre en català.
 
 HISTORIAL RECENT DE CONVERSA:
 ${historyStr || "(No hi ha historial)"}
@@ -63,7 +68,10 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-flash-lite-preview',
         contents: parts,
-        config: { temperature: 0.1 }
+        config: { 
+            temperature: 0.1,
+            maxOutputTokens: 300 
+        }
     });
 
     let rawJson = response.text;
@@ -84,5 +92,37 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
       };
     }
     return null;
+  }
+}
+
+export async function answerWithInternet(query, historyStr = "") {
+  if (!ai) throw new Error("Gemini API key is not configured");
+
+  const prompt = `Ets un assistent virtual d'agenda intel·ligent, amable i natiu en català. 
+Respon a la següent pregunta de l'usuari de forma conversacional i natural. 
+Pots buscar a internet per obtenir la informació més actualitzada (com el temps, notícies, fets, etc.).
+Fes servir l'historial si és necessari per entendre el context.
+Respon sempre en català. Si és el temps, dona una resposta humana i pràctica.
+
+HISTORIAL RECENT DE CONVERSA:
+${historyStr || "(No hi ha historial)"}
+
+Pregunta de l'usuari: "${query}"`;
+
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { 
+            temperature: 0.7,
+            maxOutputTokens: 350,
+            tools: [{ googleSearch: {} }]
+        }
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error('Error cridant a Gemini per buscar a internet:', error);
+    return "Ostres, he tingut un problema buscant això a internet. Ho pots tornar a provar?";
   }
 }

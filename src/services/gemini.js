@@ -14,8 +14,7 @@ Data i hora actual local: ${currentDateString}
 
 Has de retornar ÚNICAMENT un JSON vàlid amb aquesta estructura exacta:
 {
-  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "weather_query" | "internet_search" | "general_chat",
-  "search_query": "Consulta per buscar a internet o lloc per saber-ne el temps (si aplica)",
+  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "general_chat",
   "target_event_reference": "Nom de l'esdeveniment a modificar/esborrar (si aplica)",
   "title": "Títol descriptiu i complet de l'esdeveniment",
   "description": "Descripció o detalls addicionals",
@@ -46,8 +45,7 @@ Altres regles:
 4. Sigues tolerant amb faltes d'ortografia o llenguatge col·loquial. Dona un confidence alt sempre que entenguis la idea. Si reps un ÀUDIO, transcriu i dedueix la intenció.
 5. Utilitza l'HISTORIAL RECENT per entendre el context. Si diu "mou-ho a les 6", busca a l'historial de quin esdeveniment estava parlant i utilitza l'intent "update_event" omplint el target_event_reference corresponent.
 6. El "time" sempre en 24h. Si no especifica hora, null. "duration_minutes" és recomanable deduir-lo de la conversa o deixar-lo en null.
-7. INTERNET I TEMPS: Si l'usuari pregunta pel temps o vol buscar informació general (ex: "qui va guanyar el partit?", "quin temps fa a Madrid?"), assigna l'intent "weather_query" o "internet_search" segons correspongui i posa la pregunta directa a "search_query".
-8. Respon sempre en català.
+7. Respon sempre en català.
 
 HISTORIAL RECENT DE CONVERSA:
 ${historyStr || "(No hi ha historial)"}
@@ -91,40 +89,5 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
       };
     }
     return null;
-  }
-}
-
-export async function answerWithInternet(query, historyStr = "") {
-  if (!ai) throw new Error("Gemini API key is not configured");
-
-  const prompt = `Ets un assistent virtual d'agenda intel·ligent, amable i natiu en català. 
-Respon a la següent pregunta de l'usuari de forma conversacional i natural. 
-Pots buscar a internet per obtenir la informació més actualitzada (com el temps, notícies, fets, etc.).
-Fes servir l'historial si és necessari per entendre el context.
-Respon sempre en català. Si és el temps, dona una resposta humana i pràctica.
-Mantingues la teva resposta BREU, CONCISA i directa al gra (màxim 2-3 línies) per no gastar gaires tokens innecessàriament.
-
-HISTORIAL RECENT DE CONVERSA:
-${historyStr || "(No hi ha historial)"}
-
-Pregunta de l'usuari: "${query}"`;
-
-  try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: { 
-            temperature: 0.7,
-            tools: [{ googleSearch: {} }]
-        }
-    });
-
-    return response.text;
-  } catch (error) {
-    console.error('Error cridant a Gemini per buscar a internet:', error);
-    if (error.status === 429) {
-      return "Uf! Has esgotat el límit gratuït de cerques a internet de l'API de Google per avui (o estàs anant massa ràpid). Espera una mica i torna-ho a provar! 😅";
-    }
-    return "Ostres, he tingut un problema buscant això a internet. Ho pots tornar a provar?";
   }
 }

@@ -13,6 +13,14 @@ export const oauth2Client = new google.auth.OAuth2(
 
 export async function loadSavedCredentialsIfExist() {
   try {
+    // First try env variable (for Render cloud deployment)
+    const envToken = process.env.GOOGLE_TOKEN_JSON;
+    if (envToken) {
+      const credentials = JSON.parse(envToken);
+      oauth2Client.setCredentials(credentials);
+      return true;
+    }
+    // Fallback: local token.json file
     const content = await fs.readFile(TOKEN_PATH, 'utf-8');
     const credentials = JSON.parse(content);
     oauth2Client.setCredentials(credentials);
@@ -30,6 +38,7 @@ export async function saveCredentials(client) {
 export function getAuthUrl() {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
+    prompt: 'consent',
     scope: [
       'https://www.googleapis.com/auth/calendar',
       'https://www.googleapis.com/auth/calendar.events',

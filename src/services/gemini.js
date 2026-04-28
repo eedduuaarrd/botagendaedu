@@ -80,7 +80,7 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
       return { 
         intent: 'general_chat', 
         confidence: 1, 
-        reply_message: '⚠️ <b>Google Gemini està temporalment saturat</b>.\nCom que fem servir la versió gratuïta, només permet un nombre limitat de missatges per minut. Espera 60 segons i torna-ho a intentar!' 
+        reply_message: 'Uf! Estic processant massa coses de cop i necessito una petita pausa 😅 Dona\'m uns 30 segons i torna-m\'ho a demanar!' 
       };
     }
     return null;

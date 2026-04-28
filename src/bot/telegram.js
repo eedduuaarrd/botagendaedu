@@ -96,19 +96,19 @@ export function setupBot() {
 
   bot.onText(/\/start/, (msg) => {
     saveChatId(msg.chat.id);
-    bot.sendMessage(msg.chat.id, "👋 <b>Hola! Sóc el teu assistent d'agenda.</b>\n\nDigue'm què vols fer amb missatges de veu o text, per exemple:\n\n✨ <i>'Afegeix una reunió demà a les 10'</i>\n🎙️ <i>(També em pots enviar notes de veu)</i>\n📅 <i>'Què tinc avui?'</i>\n⚙️ <i>'Vull que les meves reunions durin 45 minuts per defecte'</i>\n📧 <i>Pots escriure /correus per veure el resum de Gmail!</i>\n🌤️ <i>Escriu /avui per veure el resum diari i el temps!</i>", { parse_mode: 'HTML' });
+    bot.sendMessage(msg.chat.id, "Ei! 👋 Sóc el teu assistent personal. Parla'm com si fos un amic:\n\n📅 <i>'Afegeix una reunió demà a les 10'</i>\n🗑️ <i>'Cancel·la lo del pàdel del dimarts'</i>\n📧 <i>'Tinc algun correu del Pere?'</i>\n☀️ <i>'Quin temps farà demà?'</i>\n🎙️ <i>O envia'm una nota de veu, que també entenc!</i>\n\nEscriu /avui per veure el teu dia complet o /correus per un resum dels emails.", { parse_mode: 'HTML' });
   });
 
   bot.onText(/\/correus/, async (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, "⏳ <i>Llegint i resumint els correus de les últimes 24h...</i>", {parse_mode: 'HTML'});
+    bot.sendMessage(chatId, "⏳ Un moment, vaig a veure els teus emails...");
     bot.sendChatAction(chatId, 'typing');
     try {
       const summary = await MailAgent.getDailyEmailSummary();
       bot.sendMessage(chatId, summary);
     } catch (emailErr) {
       console.error("Error processant correus manuals:", emailErr);
-      bot.sendMessage(chatId, "❌ No he pogut llegir el teu Gmail. Has acceptat els permisos?", {parse_mode: 'HTML'});
+      bot.sendMessage(chatId, "Ostres, no he pogut connectar amb el teu Gmail. T'has autenticat correctament? 🤔");
     }
   });
 
@@ -132,7 +132,7 @@ export function setupBot() {
       bot.sendMessage(chatId, greeting);
     } catch (error) {
       console.error("Error al /avui:", error);
-      bot.sendMessage(chatId, "No he pogut carregar l'agenda i el temps ara mateix.");
+      bot.sendMessage(chatId, "Ei, no he pogut carregar l'agenda ara. Torna-ho a provar en un moment! 🙏");
     }
   });
 
@@ -150,7 +150,7 @@ export function setupBot() {
     try {
       let audioData = null;
       if (voice) {
-         bot.sendMessage(chatId, '🎙️ <i>Processant el teu missatge de veu...</i>', { parse_mode: 'HTML' });
+         bot.sendMessage(chatId, '🎙️ Escoltant...', { parse_mode: 'HTML' });
          const fileUrl = await bot.getFileLink(voice.file_id);
          const response = await fetch(fileUrl);
          const buffer = await response.arrayBuffer();
@@ -170,7 +170,7 @@ export function setupBot() {
 
       if (!data || data.confidence < 0.4) {
         updateMemory(chatId, "Bot", "No ho he entès bé.");
-        return bot.sendMessage(chatId, "🤔 Ho sento, no he acabat d'entendre bé la teva petició. M'ho pots dir d'una altra manera?");
+        return bot.sendMessage(chatId, "Ei, no t'he entès gaire bé. 🤔 Pots repetir-ho d'una altra manera?");
       }
 
       switch (data.intent) {
@@ -207,14 +207,14 @@ export function setupBot() {
           break;
         case 'general_chat':
           updateMemory(chatId, "Bot", data.reply_message);
-          bot.sendMessage(chatId, data.reply_message || "Hola! En què et puc ajudar amb el teu calendari?");
+          bot.sendMessage(chatId, data.reply_message || "Ei! En què et puc ajudar? 😊");
           break;
         default:
-          bot.sendMessage(chatId, `🤖 He entès la teva petició com a "${data.intent}", però encara no tinc aquesta funció perfecta!`);
+          bot.sendMessage(chatId, `Entès! Però aquesta funció encara l'estic aprenent 🤓 Pots demanar-me coses de l'agenda, correus o el temps.`);
       }
     } catch (error) {
       console.error(error);
-      bot.sendMessage(chatId, "❌ Hi ha hagut un error processant el teu missatge.");
+      bot.sendMessage(chatId, "Ostres, algo ha anat malament per la meva banda 😅 Torna-ho a provar!");
     }
   });
 
@@ -260,17 +260,17 @@ export function setupBot() {
          });
       } else if (action.type === 'create_final') {
          await createEvent(action.data, action.reminder);
-         bot.sendMessage(chatId, "✅ <b>Esdeveniment afegit correctament al calendari!</b>", { parse_mode: 'HTML' });
+         bot.sendMessage(chatId, "✅ Fet! Ho tinc al calendari 🗓️", { parse_mode: 'HTML' });
       } else if (action.type === 'delete') {
          await deleteEventById(action.eventId);
-         bot.sendMessage(chatId, "🗑️ <b>Esdeveniment esborrat correctament.</b>", { parse_mode: 'HTML' });
+         bot.sendMessage(chatId, "🗑️ Esborrat! Ja no hi és.", { parse_mode: 'HTML' });
       } else if (action.type === 'update') {
          await updateEvent(action.eventId, action.originalEvent, action.data);
-         bot.sendMessage(chatId, "🔄 <b>Esdeveniment actualitzat correctament al calendari!</b>", { parse_mode: 'HTML' });
+         bot.sendMessage(chatId, "✅ Actualitzat! El teu calendari ja ho té al dia 📅", { parse_mode: 'HTML' });
       }
     } catch (error) {
       console.error(error);
-      bot.sendMessage(chatId, "❌ Hi ha hagut un error executant l'acció al calendari.");
+      bot.sendMessage(chatId, "Ui, algo ha fallat amb el calendari 😬 Torna-ho a provar!");
     }
     
     pendingActions.delete(actionId);

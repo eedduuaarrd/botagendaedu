@@ -13,7 +13,7 @@ export class MailAgent {
       return `📧 Resum de correus:\n\n${summary}`;
     } catch (err) {
       console.error("Error al MailAgent (Daily):", err);
-      throw new Error("No he pogut llegir el teu Gmail. Has acceptat els permisos?");
+      throw new Error("Ei, no he pogut connectar amb el teu Gmail 😢 T'has autenticat bé?");
     }
   }
 
@@ -27,7 +27,7 @@ export class MailAgent {
       return await answerEmailQuery(emailsText, userText);
     } catch (err) {
       console.error("Error al MailAgent (Query):", err);
-      throw new Error("Ostres, no he pogut revisar els teus correus ara mateix.");
+      throw new Error("Ostres, no he pogut buscar als teus correus. Torna-ho a provar!");
     }
   }
 }

@@ -1,5 +1,5 @@
 import { fetchTodayWeather } from '../services/weather.js';
-import { generateMorningGreeting } from '../services/gemini.js';
+import { generateMorningGreeting, generateWeatherResponse } from '../services/gemini.js';
 
 export class WeatherAgent {
   static async getMorningGreeting(eventsText) {
@@ -16,11 +16,10 @@ export class WeatherAgent {
   static async getWeather() {
     try {
       const weatherText = await fetchTodayWeather();
-      return `☁️ ${weatherText}`;
+      return await generateWeatherResponse(weatherText);
     } catch (err) {
       console.error("Error al WeatherAgent (getWeather):", err);
-      return "No he pogut mirar el temps ara mateix.";
+      return "No he pogut mirar el temps ara mateix, prova-ho en un moment!";
     }
   }
 }
-

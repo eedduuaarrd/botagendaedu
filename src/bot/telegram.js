@@ -2,10 +2,11 @@ import TelegramBot from 'node-telegram-bot-api';
 import fs from 'fs';
 import cron from 'node-cron';
 import { config } from '../config/env.js';
-import { parseNaturalLanguage, summarizeEmails, answerEmailQuery, generateMorningGreeting } from '../services/gemini.js';
+import { ManagerAgent } from '../agents/ManagerAgent.js';
+import { CalendarAgent } from '../agents/CalendarAgent.js';
+import { MailAgent } from '../agents/MailAgent.js';
+import { WeatherAgent } from '../agents/WeatherAgent.js';
 import { createEvent, listUpcomingEvents, deleteEventById, searchEvent, updateEvent } from '../services/calendar.js';
-import { fetchRecentEmails } from '../services/gmail.js';
-import { fetchTodayWeather } from '../services/weather.js';
 import { addHours } from 'date-fns';
 
 let bot;
@@ -75,19 +76,12 @@ export function setupBot() {
            });
         }
         
-        const weatherText = await fetchTodayWeather();
-        const greeting = await generateMorningGreeting(eventsText, weatherText);
+        const greeting = await WeatherAgent.getMorningGreeting(eventsText);
         bot.sendMessage(activeChatId, greeting);
 
         try {
-          const emails = await fetchRecentEmails(24);
-          if (emails.length === 0) {
-            bot.sendMessage(activeChatId, "📧 <b>Correus:</b> No tens correus nous de les últimes 24 hores.", {parse_mode: 'HTML'});
-          } else {
-            const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
-            const summary = await summarizeEmails(emailsText);
-            bot.sendMessage(activeChatId, `📧 Resum de correus:\n\n${summary}`);
-          }
+          const summary = await MailAgent.getDailyEmailSummary();
+          bot.sendMessage(activeChatId, summary);
         } catch (emailErr) {
           console.error("Error processant correus diaris:", emailErr);
           bot.sendMessage(activeChatId, "📧 No he pogut llegir el teu Gmail per fer el resum. Recorda que has d'haver acceptat els permisos de Gmail quan vas iniciar sessió.", {parse_mode: 'HTML'});
@@ -110,14 +104,8 @@ export function setupBot() {
     bot.sendMessage(chatId, "⏳ <i>Llegint i resumint els correus de les últimes 24h...</i>", {parse_mode: 'HTML'});
     bot.sendChatAction(chatId, 'typing');
     try {
-      const emails = await fetchRecentEmails(24);
-      if (emails.length === 0) {
-        bot.sendMessage(chatId, "📧 <b>Correus:</b> No tens correus nous de les últimes 24 hores.", {parse_mode: 'HTML'});
-      } else {
-        const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
-        const summary = await summarizeEmails(emailsText);
-        bot.sendMessage(chatId, `📧 Resum de correus:\n\n${summary}`);
-      }
+      const summary = await MailAgent.getDailyEmailSummary();
+      bot.sendMessage(chatId, summary);
     } catch (emailErr) {
       console.error("Error processant correus manuals:", emailErr);
       bot.sendMessage(chatId, "❌ No he pogut llegir el teu Gmail. Has acceptat els permisos?", {parse_mode: 'HTML'});
@@ -140,8 +128,7 @@ export function setupBot() {
          });
       }
       
-      const weatherText = await fetchTodayWeather();
-      const greeting = await generateMorningGreeting(eventsText, weatherText);
+      const greeting = await WeatherAgent.getMorningGreeting(eventsText);
       bot.sendMessage(chatId, greeting);
     } catch (error) {
       console.error("Error al /avui:", error);
@@ -179,7 +166,7 @@ export function setupBot() {
       const currentDateString = new Date().toLocaleString('ca-ES', { timeZone: 'Europe/Madrid' });
       const historyStr = getMemoryStr(chatId);
       
-      const data = await parseNaturalLanguage(text, currentDateString, historyStr, audioData);
+      const data = await ManagerAgent.processUserMessage(text, currentDateString, historyStr, audioData);
 
       if (!data || data.confidence < 0.4) {
         updateMemory(chatId, "Bot", "No ho he entès bé.");
@@ -189,20 +176,20 @@ export function setupBot() {
       switch (data.intent) {
         case 'create_event':
           updateMemory(chatId, "Bot", `He detectat intent de crear esdeveniment: ${data.title}`);
-          await handleCreateRequest(chatId, data);
+          await CalendarAgent.handleCreateRequest(bot, chatId, data, pendingActions, generateId, userPrefs);
           break;
         case 'query_agenda':
         case 'query_free_time':
           updateMemory(chatId, "Bot", `He mostrat la seva agenda.`);
-          await handleQueryRequest(chatId, data);
+          await CalendarAgent.handleQueryRequest(bot, chatId, data);
           break;
         case 'delete_event':
           updateMemory(chatId, "Bot", `Petició per esborrar: ${data.target_event_reference}`);
-          await handleDeleteRequest(chatId, data);
+          await CalendarAgent.handleDeleteRequest(bot, chatId, data, pendingActions, generateId);
           break;
         case 'update_event':
           updateMemory(chatId, "Bot", `Petició per actualitzar: ${data.target_event_reference}`);
-          await handleUpdateRequest(chatId, data);
+          await CalendarAgent.handleUpdateRequest(bot, chatId, data, pendingActions, generateId);
           break;
         case 'update_preferences':
           updateMemory(chatId, "Bot", "Canvi de preferències");
@@ -210,7 +197,8 @@ export function setupBot() {
           break;
         case 'query_emails':
           updateMemory(chatId, "Bot", "Buscant als correus");
-          await handleEmailQueryRequest(chatId, text);
+          const answer = await MailAgent.handleEmailQuery(text);
+          bot.sendMessage(chatId, answer);
           break;
         case 'general_chat':
           updateMemory(chatId, "Bot", data.reply_message);
@@ -308,175 +296,3 @@ async function handleUpdatePreferences(chatId, data, scheduleCronFn) {
   }
 }
 
-async function handleCreateRequest(chatId, data) {
-  // Aplicar defaultDuration si no n'hi ha cap
-  if (!data.duration_minutes && !data.end_time && data.time) {
-     data.duration_minutes = userPrefs.defaultDuration;
-  }
-
-  const timeStr = data.time ? data.time : 'Tot el dia';
-  const durationStr = data.duration_minutes ? ` (${data.duration_minutes} minuts)` : '';
-  
-  let overlapWarning = '';
-  if (data.date && data.time) {
-    const eventsOfDay = await listUpcomingEvents(50, data.date, data.date);
-    const startStr = `${data.date}T${data.time}:00`;
-    let endStr = data.end_time ? `${data.date}T${data.end_time}:00` : null;
-    
-    const newStart = new Date(startStr);
-    const newEnd = endStr ? new Date(endStr) : addHours(newStart, data.duration_minutes ? data.duration_minutes/60 : 1);
-
-    const overlapping = eventsOfDay.filter(ev => {
-       if (!ev.start.dateTime) return false;
-       const evStart = new Date(ev.start.dateTime);
-       const evEnd = new Date(ev.end.dateTime);
-       return (newStart < evEnd && newEnd > evStart);
-    });
-
-    if (overlapping.length > 0) {
-       overlapWarning = `\n\n⚠️ <b>ATENCIÓ: Solapament detectat!</b>\nJa tens "<i>${overlapping[0].summary}</i>" programat a la mateixa hora.`;
-    }
-  }
-
-  const text = `✨ ${data.reply_message || "He detectat que vols crear un esdeveniment."}
-
-📝 <b>Títol:</b> ${data.title || 'Sense títol'}
-📆 <b>Data:</b> ${data.date}
-⏰ <b>Hora:</b> ${timeStr}${durationStr}
-📍 <b>Lloc:</b> ${data.location || 'No especificat'}${overlapWarning}
-
-Vols que ho afegeixi al calendari?`;
-
-  const acceptId = generateId();
-  const cancelId = generateId();
-  
-  pendingActions.set(acceptId, { type: 'create', data });
-  pendingActions.set(cancelId, { type: 'cancel' });
-
-  bot.sendMessage(chatId, text, {
-    parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [[
-        { text: "✅ Confirmar i afegir", callback_data: acceptId },
-        { text: "❌ Cancel·lar", callback_data: cancelId }
-      ]]
-    }
-  });
-}
-
-async function handleQueryRequest(chatId, data) {
-  const events = await listUpcomingEvents(15, data.date, data.date_end);
-  
-  if (!events || events.length === 0) {
-    let period = "pròximament";
-    if (data.date && !data.date_end) {
-      const todayStr = new Date().toISOString().substring(0,10);
-      period = data.date === todayStr ? "per avui" : `el ${data.date}`;
-    } else if (data.date && data.date_end) {
-      period = `entre el ${data.date} i el ${data.date_end}`;
-    }
-    return bot.sendMessage(chatId, `🎉 Tens l'agenda lliure ${period}! No tens cap esdeveniment programat.`);
-  }
-
-  let text = `📅 <b>Aquests són els teus esdeveniments:</b>\n\n`;
-  events.forEach((ev) => {
-    const start = ev.start.dateTime || ev.start.date;
-    const dateObj = new Date(start);
-    const dateStr = dateObj.toLocaleDateString('ca-ES', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' });
-    const timeStr = ev.start.dateTime ? dateObj.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Tot el dia';
-    text += `🔹 <b>${dateStr} (${timeStr})</b>\n└ ${ev.summary}\n\n`;
-  });
-
-  bot.sendMessage(chatId, text, { parse_mode: 'HTML' });
-}
-
-async function handleDeleteRequest(chatId, data) {
-  if (!data.target_event_reference) {
-    return bot.sendMessage(chatId, "🤔 No m'ha quedat clar quin esdeveniment vols esborrar. Pots dir-me el nom exacte o la data?");
-  }
-
-  const events = await searchEvent(data.target_event_reference, data.date);
-  if (!events || events.length === 0) {
-    return bot.sendMessage(chatId, `❌ No he trobat cap esdeveniment que es digui o tracti sobre "${data.target_event_reference}".`);
-  }
-
-  const event = events[0];
-  const dateStr = new Date(event.start.dateTime || event.start.date).toLocaleString('ca-ES');
-
-  const text = `🗑️ <b>He trobat aquest esdeveniment al teu calendari:</b>
-  
-📝 <b>${event.summary}</b>
-⏰ ${dateStr}
-
-N'estàs segur que el vols <b>esborrar per sempre</b>?`;
-
-  const acceptId = generateId();
-  const cancelId = generateId();
-  
-  pendingActions.set(acceptId, { type: 'delete', eventId: event.id });
-  pendingActions.set(cancelId, { type: 'cancel' });
-
-  bot.sendMessage(chatId, text, {
-    parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [[
-        { text: "🗑️ Sí, esborrar-lo", callback_data: acceptId },
-        { text: "❌ No, cancel·lar", callback_data: cancelId }
-      ]]
-    }
-  });
-}
-
-async function handleUpdateRequest(chatId, data) {
-  if (!data.target_event_reference) {
-    return bot.sendMessage(chatId, "🤔 No m'ha quedat clar quin esdeveniment vols modificar. M'ho tornes a dir?");
-  }
-
-  const events = await searchEvent(data.target_event_reference);
-  if (!events || events.length === 0) {
-    return bot.sendMessage(chatId, `❌ No he trobat cap esdeveniment relacionat amb "${data.target_event_reference}".`);
-  }
-
-  const event = events[0];
-  const oldDateStr = new Date(event.start.dateTime || event.start.date).toLocaleString('ca-ES');
-  
-  const text = `🔄 <b>Anem a actualitzar aquest esdeveniment:</b>
-
-<b>Actual:</b> ${event.summary} (${oldDateStr})
-
-<b>Canvis a aplicar:</b>
-${data.title ? `✏️ Nou títol: ${data.title}\n` : ''}${data.date ? `📆 Nova data: ${data.date}\n` : ''}${data.time ? `⏰ Nova hora: ${data.time}\n` : ''}
-Ho veus bé?`;
-
-  const acceptId = generateId();
-  const cancelId = generateId();
-  
-  pendingActions.set(acceptId, { type: 'update', eventId: event.id, originalEvent: event, data });
-  pendingActions.set(cancelId, { type: 'cancel' });
-
-  bot.sendMessage(chatId, text, {
-    parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [[
-        { text: "🔄 Guardar canvis", callback_data: acceptId },
-        { text: "❌ Cancel·lar", callback_data: cancelId }
-      ]]
-    }
-  });
-}
-
-async function handleEmailQueryRequest(chatId, userText) {
-  bot.sendChatAction(chatId, 'typing');
-  try {
-    const emails = await fetchRecentEmails(72);
-    if (emails.length === 0) {
-      return bot.sendMessage(chatId, "Ei! No tens cap correu en els últims dies.");
-    }
-    const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
-    const answer = await answerEmailQuery(emailsText, userText);
-    bot.sendMessage(chatId, answer);
-  } catch (err) {
-    console.error("Error processant pregunta de correus:", err);
-    bot.sendMessage(chatId, "Ostres, no he pogut revisar els teus correus ara mateix.");
-  }
-}

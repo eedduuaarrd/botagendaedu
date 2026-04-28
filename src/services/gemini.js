@@ -122,6 +122,9 @@ Pregunta de l'usuari: "${query}"`;
     return response.text;
   } catch (error) {
     console.error('Error cridant a Gemini per buscar a internet:', error);
+    if (error.status === 429) {
+      return "Uf! Has esgotat el límit gratuït de cerques a internet de l'API de Google per avui (o estàs anant massa ràpid). Espera una mica i torna-ho a provar! 😅";
+    }
     return "Ostres, he tingut un problema buscant això a internet. Ho pots tornar a provar?";
   }
 }

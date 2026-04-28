@@ -76,6 +76,13 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
     return JSON.parse(rawJson.trim());
   } catch (error) {
     console.error('Error cridant a Gemini:', error);
+    if (error.status === 429) {
+      return { 
+        intent: 'general_chat', 
+        confidence: 1, 
+        reply_message: '⚠️ <b>Google Gemini està temporalment saturat</b>.\nCom que fem servir la versió gratuïta, només permet un nombre limitat de missatges per minut. Espera 60 segons i torna-ho a intentar!' 
+      };
+    }
     return null;
   }
 }

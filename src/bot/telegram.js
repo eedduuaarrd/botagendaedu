@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import fs from 'fs';
 import cron from 'node-cron';
 import { config } from '../config/env.js';
-import { parseNaturalLanguage, summarizeEmails } from '../services/gemini.js';
+import { parseNaturalLanguage, summarizeEmails, answerEmailQuery } from '../services/gemini.js';
 import { createEvent, listUpcomingEvents, deleteEventById, searchEvent, updateEvent } from '../services/calendar.js';
 import { fetchRecentEmails } from '../services/gmail.js';
 import { addHours } from 'date-fns';
@@ -178,6 +178,10 @@ export function setupBot() {
         case 'update_preferences':
           updateMemory(chatId, "Bot", "Canvi de preferències");
           await handleUpdatePreferences(chatId, data, scheduleCron);
+          break;
+        case 'query_emails':
+          updateMemory(chatId, "Bot", "Buscant als correus");
+          await handleEmailQueryRequest(chatId, text);
           break;
         case 'general_chat':
           updateMemory(chatId, "Bot", data.reply_message);
@@ -430,4 +434,20 @@ Ho veus bé?`;
       ]]
     }
   });
+}
+
+async function handleEmailQueryRequest(chatId, userText) {
+  bot.sendChatAction(chatId, 'typing');
+  try {
+    const emails = await fetchRecentEmails(72);
+    if (emails.length === 0) {
+      return bot.sendMessage(chatId, "Ei! No tens cap correu en els últims dies.");
+    }
+    const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
+    const answer = await answerEmailQuery(emailsText, userText);
+    bot.sendMessage(chatId, answer);
+  } catch (err) {
+    console.error("Error processant pregunta de correus:", err);
+    bot.sendMessage(chatId, "Ostres, no he pogut revisar els teus correus ara mateix.");
+  }
 }

@@ -14,8 +14,9 @@ Data i hora actual local: ${currentDateString}
 
 Has de retornar ÚNICAMENT un JSON vàlid amb aquesta estructura exacta:
 {
-  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "general_chat",
+  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "query_emails" | "general_chat",
   "target_event_reference": "Nom de l'esdeveniment a modificar/esborrar (si aplica)",
+  "email_query": "De qui o sobre què està preguntant (p.ex. 'Edu', 'factura', 'Amazon'). Null si no especifica.",
   "title": "Títol descriptiu i complet de l'esdeveniment",
   "description": "Descripció o detalls addicionals",
   "date": "YYYY-MM-DD",
@@ -46,6 +47,8 @@ Altres regles:
 5. Utilitza l'HISTORIAL RECENT per entendre el context. Si diu "mou-ho a les 6", busca a l'historial de quin esdeveniment estava parlant i utilitza l'intent "update_event" omplint el target_event_reference corresponent.
 6. El "time" sempre en 24h. Si no especifica hora, null. "duration_minutes" és recomanable deduir-lo de la conversa o deixar-lo en null.
 7. Respon sempre en català.
+8. Totes les teves respostes a "reply_message" han de ser en llenguatge SÚPER col·loquial, natural, amigable, súper breus i concises (com un missatge de WhatsApp a un amic). Fes servir algun emoji.
+9. Per l'intent "query_emails", utilitza "email_query" per guardar la paraula clau que l'usuari vol buscar als correus (p. ex: si diu "tinc correus del Pere?", email_query: "Pere").
 
 HISTORIAL RECENT DE CONVERSA:
 ${historyStr || "(No hi ha historial)"}
@@ -95,11 +98,12 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
 export async function summarizeEmails(emailsText) {
   if (!ai) throw new Error("Gemini API key is not configured");
   
-  const prompt = `Ets un assistent virtual que resumeix correus electrònics.
-A continuació tens una llista de correus rebuts en les últimes 24 hores.
-Fes-ne un breu resum destacant els més importants o urgents, i agrupa la resta de forma concisa.
-Respon sempre en català, amb un to amable i directe, preparat per ser enviat per Telegram. Usa emojis.
-No t'inventis res. Si no hi ha correus o n'hi ha pocs, digues-ho clarament.
+  const prompt = `Ets el meu assistent personal super enrollat.
+Aquí tens els meus correus de les últimes 24 hores.
+Fes-ne un resum SÚPER breu, directe, natural i molt col·loquial. Com si m'ho diguessis per WhatsApp.
+Destaca només el més rellevant, agrupant la morralla en una sola frase. Fes servir emojis sense passar-te.
+Si no hi ha res, digues-m'ho ràpid: "Ei, res de nou avui als correus!".
+No facis llistes eternes, fes-ho fàcil de llegir en un cop d'ull.
 
 CORREUS:
 ${emailsText}`;
@@ -114,5 +118,30 @@ ${emailsText}`;
   } catch (error) {
     console.error('Error resumint correus:', error);
     return "Hi ha hagut un error en generar el resum dels correus.";
+  }
+}
+
+export async function answerEmailQuery(emailsText, userQuestion) {
+  if (!ai) throw new Error("Gemini API key is not configured");
+  
+  const prompt = `Ets el meu assistent personal. T'he preguntat el següent sobre els meus correus recents: "${userQuestion}"
+
+Aquí tens la llista dels correus recents per si et serveixen per respondre:
+${emailsText}
+
+Respon a la meva pregunta de forma SÚPER breu, col·loquial, directa i natural, com si fos un missatge de WhatsApp.
+Si trobes el que busco, digues-m'ho ràpid. Si no ho trobes, digues "No he vist res sobre això".
+Només en català i usa algun emoji.`;
+
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite-preview',
+        contents: prompt,
+        config: { temperature: 0.2 }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error responent consulta correus:', error);
+    return "Ostres, m'he liat buscant els correus. Torna-ho a provar!";
   }
 }

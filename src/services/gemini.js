@@ -69,8 +69,7 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
         model: 'gemini-3.1-flash-lite-preview',
         contents: parts,
         config: { 
-            temperature: 0.1,
-            maxOutputTokens: 300 
+            temperature: 0.1
         }
     });
 
@@ -103,6 +102,7 @@ Respon a la següent pregunta de l'usuari de forma conversacional i natural.
 Pots buscar a internet per obtenir la informació més actualitzada (com el temps, notícies, fets, etc.).
 Fes servir l'historial si és necessari per entendre el context.
 Respon sempre en català. Si és el temps, dona una resposta humana i pràctica.
+Mantingues la teva resposta BREU, CONCISA i directa al gra (màxim 2-3 línies) per no gastar gaires tokens innecessàriament.
 
 HISTORIAL RECENT DE CONVERSA:
 ${historyStr || "(No hi ha historial)"}
@@ -115,7 +115,6 @@ Pregunta de l'usuari: "${query}"`;
         contents: prompt,
         config: { 
             temperature: 0.7,
-            maxOutputTokens: 350,
             tools: [{ googleSearch: {} }]
         }
     });

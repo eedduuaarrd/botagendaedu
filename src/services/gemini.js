@@ -156,7 +156,7 @@ Has de dir-me el resum de l'agenda d'avui i, molt important, fer-me una recomana
 AGENDA D'AVUI:
 ${eventsText}
 
-TEMPS A LLEIDA:
+TEMPS A BALAGUER:
 ${weatherText}
 
 Regles:

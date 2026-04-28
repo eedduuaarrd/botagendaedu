@@ -2,9 +2,10 @@ import TelegramBot from 'node-telegram-bot-api';
 import fs from 'fs';
 import cron from 'node-cron';
 import { config } from '../config/env.js';
-import { parseNaturalLanguage, summarizeEmails, answerEmailQuery } from '../services/gemini.js';
+import { parseNaturalLanguage, summarizeEmails, answerEmailQuery, generateMorningGreeting } from '../services/gemini.js';
 import { createEvent, listUpcomingEvents, deleteEventById, searchEvent, updateEvent } from '../services/calendar.js';
 import { fetchRecentEmails } from '../services/gmail.js';
+import { fetchTodayWeather } from '../services/weather.js';
 import { addHours } from 'date-fns';
 
 let bot;
@@ -64,16 +65,19 @@ export function setupBot() {
         const today = new Date().toLocaleString('en-CA', {timeZone: 'Europe/Madrid'}).substring(0, 10);
         const events = await listUpcomingEvents(20, today, today);
         
+        let eventsText = '';
         if (!events || events.length === 0) {
-           bot.sendMessage(activeChatId, `🌅 <b>Bon dia!</b>\nAvui tens el dia completament lliure, no hi ha cap esdeveniment programat.`, {parse_mode: 'HTML'});
+           eventsText = "Avui tens el dia completament lliure, no hi ha cap esdeveniment programat.";
         } else {
-           let text = `🌅 <b>Bon dia! Aquí tens el resum de la teva agenda per avui:</b>\n\n`;
            events.forEach((ev) => {
              const timeStr = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Tot el dia';
-             text += `🔹 <b>${timeStr}</b> - ${ev.summary}\n`;
+             eventsText += `- ${timeStr}: ${ev.summary}\n`;
            });
-           bot.sendMessage(activeChatId, text, {parse_mode: 'HTML'});
         }
+        
+        const weatherText = await fetchTodayWeather();
+        const greeting = await generateMorningGreeting(eventsText, weatherText);
+        bot.sendMessage(activeChatId, greeting, {parse_mode: 'HTML'});
 
         try {
           const emails = await fetchRecentEmails(24);

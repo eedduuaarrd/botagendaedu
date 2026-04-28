@@ -145,3 +145,35 @@ Només en català i usa algun emoji.`;
     return "Ostres, m'he liat buscant els correus. Torna-ho a provar!";
   }
 }
+
+export async function generateMorningGreeting(eventsText, weatherText) {
+  if (!ai) return `Bon dia! Això és el que tens avui:\n\n${eventsText}\n\n${weatherText}`;
+  
+  const prompt = `Ets el meu assistent personal súper enrollat i el meu millor amic.
+Escriu el missatge de "Bon dia" que m'enviaràs per WhatsApp cada matí.
+Has de dir-me el resum de l'agenda d'avui i, molt important, fer-me una recomanació de roba o de si agafar paraigua basant-te en el temps que farà avui.
+
+AGENDA D'AVUI:
+${eventsText}
+
+TEMPS A LLEIDA:
+${weatherText}
+
+Regles:
+- Llenguatge SÚPER col·loquial, natural, directe, com un col·lega de veritat. Usa emojis.
+- Respon directament amb el missatge, no diguis "Aquí tens el teu missatge:" ni coses així.
+- Si l'agenda està lliure, celebra-ho!
+- Diga'm com he de sortir de casa (samarreta, jaqueta, bufanda, paraigua, etc.).`;
+
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite-preview',
+        contents: prompt,
+        config: { temperature: 0.4 }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error generant salutació diària:', error);
+    return `Bon dia rei! Ha fallat una mica el meu cervell, però aquí tens el teu dia:\n${eventsText}\n\nTemps: ${weatherText}`;
+  }
+}

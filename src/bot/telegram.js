@@ -102,7 +102,7 @@ export function setupBot() {
 
   bot.onText(/\/start/, (msg) => {
     saveChatId(msg.chat.id);
-    bot.sendMessage(msg.chat.id, "👋 <b>Hola! Sóc el teu assistent d'agenda.</b>\n\nDigue'm què vols fer amb missatges de veu o text, per exemple:\n\n✨ <i>'Afegeix una reunió demà a les 10'</i>\n🎙️ <i>(També em pots enviar notes de veu)</i>\n📅 <i>'Què tinc avui?'</i>\n⚙️ <i>'Vull que les meves reunions durin 45 minuts per defecte'</i>\n📧 <i>Pots escriure /correus per veure el resum de Gmail!</i>", { parse_mode: 'HTML' });
+    bot.sendMessage(msg.chat.id, "👋 <b>Hola! Sóc el teu assistent d'agenda.</b>\n\nDigue'm què vols fer amb missatges de veu o text, per exemple:\n\n✨ <i>'Afegeix una reunió demà a les 10'</i>\n🎙️ <i>(També em pots enviar notes de veu)</i>\n📅 <i>'Què tinc avui?'</i>\n⚙️ <i>'Vull que les meves reunions durin 45 minuts per defecte'</i>\n📧 <i>Pots escriure /correus per veure el resum de Gmail!</i>\n🌤️ <i>Escriu /avui per veure el resum diari i el temps!</i>", { parse_mode: 'HTML' });
   });
 
   bot.onText(/\/correus/, async (msg) => {
@@ -121,6 +121,31 @@ export function setupBot() {
     } catch (emailErr) {
       console.error("Error processant correus manuals:", emailErr);
       bot.sendMessage(chatId, "❌ No he pogut llegir el teu Gmail. Has acceptat els permisos?", {parse_mode: 'HTML'});
+    }
+  });
+
+  bot.onText(/\/avui/, async (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendChatAction(chatId, 'typing');
+    try {
+      const today = new Date().toLocaleString('en-CA', {timeZone: 'Europe/Madrid'}).substring(0, 10);
+      const events = await listUpcomingEvents(20, today, today);
+      let eventsText = '';
+      if (!events || events.length === 0) {
+         eventsText = "Avui tens el dia completament lliure, no hi ha cap esdeveniment programat.";
+      } else {
+         events.forEach((ev) => {
+           const timeStr = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Tot el dia';
+           eventsText += `- ${timeStr}: ${ev.summary}\n`;
+         });
+      }
+      
+      const weatherText = await fetchTodayWeather();
+      const greeting = await generateMorningGreeting(eventsText, weatherText);
+      bot.sendMessage(chatId, greeting);
+    } catch (error) {
+      console.error("Error al /avui:", error);
+      bot.sendMessage(chatId, "No he pogut carregar l'agenda i el temps ara mateix.");
     }
   });
 

@@ -77,7 +77,7 @@ export function setupBot() {
         
         const weatherText = await fetchTodayWeather();
         const greeting = await generateMorningGreeting(eventsText, weatherText);
-        bot.sendMessage(activeChatId, greeting, {parse_mode: 'HTML'});
+        bot.sendMessage(activeChatId, greeting);
 
         try {
           const emails = await fetchRecentEmails(24);
@@ -86,7 +86,7 @@ export function setupBot() {
           } else {
             const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
             const summary = await summarizeEmails(emailsText);
-            bot.sendMessage(activeChatId, `📧 <b>Resum de correus (últimes 24h):</b>\n\n${summary}`, {parse_mode: 'HTML'});
+            bot.sendMessage(activeChatId, `📧 Resum de correus:\n\n${summary}`);
           }
         } catch (emailErr) {
           console.error("Error processant correus diaris:", emailErr);
@@ -116,7 +116,7 @@ export function setupBot() {
       } else {
         const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
         const summary = await summarizeEmails(emailsText);
-        bot.sendMessage(chatId, `📧 <b>Resum de correus (últimes 24h):</b>\n\n${summary}`, {parse_mode: 'HTML'});
+        bot.sendMessage(chatId, `📧 Resum de correus:\n\n${summary}`);
       }
     } catch (emailErr) {
       console.error("Error processant correus manuals:", emailErr);

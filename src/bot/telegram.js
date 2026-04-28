@@ -62,30 +62,7 @@ export function setupBot() {
         if (!fs.existsSync('chat_id.txt')) return;
         const activeChatId = fs.readFileSync('chat_id.txt', 'utf8');
         if (!activeChatId) return;
-
-        const today = new Date().toLocaleString('en-CA', {timeZone: 'Europe/Madrid'}).substring(0, 10);
-        const events = await listUpcomingEvents(20, today, today);
-        
-        let eventsText = '';
-        if (!events || events.length === 0) {
-           eventsText = "Avui tens el dia completament lliure, no hi ha cap esdeveniment programat.";
-        } else {
-           events.forEach((ev) => {
-             const timeStr = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Tot el dia';
-             eventsText += `- ${timeStr}: ${ev.summary}\n`;
-           });
-        }
-        
-        const greeting = await WeatherAgent.getMorningGreeting(eventsText);
-        bot.sendMessage(activeChatId, greeting);
-
-        try {
-          const summary = await MailAgent.getDailyEmailSummary();
-          bot.sendMessage(activeChatId, summary);
-        } catch (emailErr) {
-          console.error("Error processant correus diaris:", emailErr);
-          bot.sendMessage(activeChatId, "📧 No he pogut llegir el teu Gmail per fer el resum. Recorda que has d'haver acceptat els permisos de Gmail quan vas iniciar sessió.", {parse_mode: 'HTML'});
-        }
+        await sendDailyBriefing(activeChatId);
       } catch (error) {
         console.error("Error al cron diari:", error);
       }
@@ -114,26 +91,9 @@ export function setupBot() {
 
   bot.onText(/\/avui/, async (msg) => {
     const chatId = msg.chat.id;
+    saveChatId(chatId);
     bot.sendChatAction(chatId, 'typing');
-    try {
-      const today = new Date().toLocaleString('en-CA', {timeZone: 'Europe/Madrid'}).substring(0, 10);
-      const events = await listUpcomingEvents(20, today, today);
-      let eventsText = '';
-      if (!events || events.length === 0) {
-         eventsText = "Avui tens el dia completament lliure, no hi ha cap esdeveniment programat.";
-      } else {
-         events.forEach((ev) => {
-           const timeStr = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Tot el dia';
-           eventsText += `- ${timeStr}: ${ev.summary}\n`;
-         });
-      }
-      
-      const greeting = await WeatherAgent.getMorningGreeting(eventsText);
-      bot.sendMessage(chatId, greeting);
-    } catch (error) {
-      console.error("Error al /avui:", error);
-      bot.sendMessage(chatId, "Ei, no he pogut carregar l'agenda ara. Torna-ho a provar en un moment! 🙏");
-    }
+    await sendDailyBriefing(chatId);
   });
 
   bot.on('message', async (msg) => {
@@ -295,9 +255,75 @@ async function handleUpdatePreferences(chatId, data, scheduleCronFn) {
 
   if (changed) {
      savePrefs();
-     bot.sendMessage(chatId, `⚙️ <b>Preferències actualitzades:</b>\n\n🌅 Hora del resum diari: ${userPrefs.summaryTime}\n⏳ Duració per defecte de reunions: ${userPrefs.defaultDuration} minuts\n\n${data.reply_message || "Fet!"}`, { parse_mode: 'HTML' });
+     bot.sendMessage(chatId, `⚙️ Fet! Preferències guardades:\n🌅 Resum diari: ${userPrefs.summaryTime}\n⏱️ Durada per defecte: ${userPrefs.defaultDuration} min`);
   } else {
-     bot.sendMessage(chatId, "🤔 No he detectat cap canvi específic de preferències a guardar.");
+     bot.sendMessage(chatId, "Hmm, no he detectat cap canvi de preferències. Pots dir-m'ho d'una altra manera? 🤔");
   }
 }
 
+async function sendDailyBriefing(chatId) {
+  try {
+    const today = new Date().toLocaleString('en-CA', {timeZone: 'Europe/Madrid'}).substring(0, 10);
+    
+    // Agenda avui
+    const todayEvents = await listUpcomingEvents(20, today, today);
+    let todayText = '';
+    if (!todayEvents || todayEvents.length === 0) {
+      todayText = "Cap event avui 🎉";
+    } else {
+      todayEvents.forEach((ev) => {
+        const timeStr = ev.start.dateTime
+          ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' })
+          : 'Tot el dia';
+        todayText += `  ▶️ ${timeStr}: ${ev.summary}\n`;
+      });
+    }
+
+    // Propers 7 dies (excloent avui)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toLocaleString('en-CA', {timeZone: 'Europe/Madrid'}).substring(0, 10);
+    const in7days = new Date();
+    in7days.setDate(in7days.getDate() + 7);
+    const in7daysStr = in7days.toLocaleString('en-CA', {timeZone: 'Europe/Madrid'}).substring(0, 10);
+
+    const weekEvents = await listUpcomingEvents(15, tomorrowStr, in7daysStr);
+    let weekText = '';
+    if (!weekEvents || weekEvents.length === 0) {
+      weekText = "  Cap event els propers 7 dies 😎";
+    } else {
+      weekEvents.forEach((ev) => {
+        const d = new Date(ev.start.dateTime || ev.start.date);
+        const dateStr = d.toLocaleDateString('ca-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+        const timeStr = ev.start.dateTime
+          ? d.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' })
+          : 'Tot el dia';
+        weekText += `  📌 ${dateStr} ${timeStr}: ${ev.summary}\n`;
+      });
+    }
+
+    // Greeting amb temps
+    const eventsTextForGreeting = todayText;
+    const greeting = await WeatherAgent.getMorningGreeting(eventsTextForGreeting);
+
+    // Agenda formatada
+    const agendaMsg = `📅 <b>Agenda d'avui:</b>\n${todayText}\n📆 <b>Propers 7 dies:</b>\n${weekText}`;
+
+    // Enviem els missatges
+    bot.sendMessage(chatId, greeting);
+    bot.sendMessage(chatId, agendaMsg, { parse_mode: 'HTML' });
+
+    // Correus
+    try {
+      const emailSummary = await MailAgent.getDailyEmailSummary();
+      bot.sendMessage(chatId, emailSummary);
+    } catch (emailErr) {
+      console.error("Error correus briefing:", emailErr);
+      bot.sendMessage(chatId, "📧 No he pogut carregar els correus ara.");
+    }
+
+  } catch (error) {
+    console.error("Error al sendDailyBriefing:", error);
+    bot.sendMessage(chatId, "Ei, no he pogut carregar tot el resum ara. Torna-ho a provar en un moment! 🙏");
+  }
+}

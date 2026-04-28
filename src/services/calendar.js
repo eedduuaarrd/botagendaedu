@@ -89,14 +89,29 @@ export async function searchEvent(query, date) {
   
   const res = await calendar.events.list({
     calendarId: 'primary',
-    q: query,
     timeMin,
     timeMax,
-    maxResults: 5,
     singleEvents: true,
     orderBy: 'startTime',
   });
-  return res.data.items;
+
+  const allEvents = res.data.items || [];
+  
+  if (!query) return allEvents.slice(0, 5);
+
+  const normalizeStr = (str) => {
+    return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+  };
+
+  const normalizedQuery = normalizeStr(query);
+
+  const matched = allEvents.filter(ev => {
+    const title = normalizeStr(ev.summary);
+    const desc = normalizeStr(ev.description);
+    return title.includes(normalizedQuery) || desc.includes(normalizedQuery);
+  });
+
+  return matched.slice(0, 5);
 }
 
 export async function updateEvent(eventId, originalEvent, eventData) {

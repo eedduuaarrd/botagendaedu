@@ -14,7 +14,7 @@ Data i hora actual local: ${currentDateString}
 
 Has de retornar ÚNICAMENT un JSON vàlid amb aquesta estructura exacta:
 {
-  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "query_emails" | "general_chat",
+  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "query_emails" | "query_weather" | "general_chat",
   "target_event_reference": "Nom de l'esdeveniment a modificar/esborrar (si aplica)",
   "email_query": "De qui o sobre què està preguntant (p.ex. 'Edu', 'factura', 'Amazon'). Null si no especifica.",
   "title": "Títol descriptiu i complet de l'esdeveniment",

@@ -200,6 +200,11 @@ export function setupBot() {
           const answer = await MailAgent.handleEmailQuery(text);
           bot.sendMessage(chatId, answer);
           break;
+        case 'query_weather':
+          updateMemory(chatId, "Bot", "Donant el temps");
+          const tempsStr = await WeatherAgent.getWeather();
+          bot.sendMessage(chatId, tempsStr);
+          break;
         case 'general_chat':
           updateMemory(chatId, "Bot", data.reply_message);
           bot.sendMessage(chatId, data.reply_message || "Hola! En què et puc ajudar amb el teu calendari?");

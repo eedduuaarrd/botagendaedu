@@ -12,4 +12,15 @@ export class WeatherAgent {
       return `Bon dia! Aquí tens el teu dia:\n${eventsText}`;
     }
   }
+
+  static async getWeather() {
+    try {
+      const weatherText = await fetchTodayWeather();
+      return `☁️ ${weatherText}`;
+    } catch (err) {
+      console.error("Error al WeatherAgent (getWeather):", err);
+      return "No he pogut mirar el temps ara mateix.";
+    }
+  }
 }
+

@@ -2,19 +2,21 @@ import https from 'https';
 
 export function fetchTodayWeather() {
   return new Promise((resolve) => {
-    // Balaguer coordinates
     const lat = 41.7892;
     const lon = 0.8122;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%2FMadrid&forecast_days=1`;
 
-    https.get(url, (res) => {
+    https.get(url, { headers: { 'User-Agent': 'TelegramBotAgenda/1.0' } }, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
+        if (res.statusCode !== 200) {
+           return resolve(`Error de l'API del temps. Codi: ${res.statusCode}. Resposta: ${body}`);
+        }
         try {
           const data = JSON.parse(body);
           if (!data || !data.daily) {
-            return resolve("No he pogut obtenir el temps d'avui a Balaguer.");
+            return resolve("Error analitzant el format de l'API meteorològica.");
           }
 
           const maxTemp = data.daily.temperature_2m_max[0];
@@ -33,12 +35,12 @@ export function fetchTodayWeather() {
 
           resolve(`Temps avui a Balaguer: ${status}. Màxima de ${maxTemp}ºC i mínima de ${minTemp}ºC. Precipitació esperada: ${precip}mm.`);
         } catch (e) {
-          resolve("Error analitzant el temps de Balaguer.");
+          resolve(`Error desxifrant el temps: ${e.message}`);
         }
       });
     }).on('error', (e) => {
       console.error("Error xarxa temps:", e);
-      resolve("Error connectant per obtenir el temps de Balaguer.");
+      resolve(`Error de xarxa obtenint el temps: ${e.message}`);
     });
   });
 }

@@ -91,3 +91,28 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
     return null;
   }
 }
+
+export async function summarizeEmails(emailsText) {
+  if (!ai) throw new Error("Gemini API key is not configured");
+  
+  const prompt = `Ets un assistent virtual que resumeix correus electrònics.
+A continuació tens una llista de correus rebuts en les últimes 24 hores.
+Fes-ne un breu resum destacant els més importants o urgents, i agrupa la resta de forma concisa.
+Respon sempre en català, amb un to amable i directe, preparat per ser enviat per Telegram. Usa emojis.
+No t'inventis res. Si no hi ha correus o n'hi ha pocs, digues-ho clarament.
+
+CORREUS:
+${emailsText}`;
+
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite-preview',
+        contents: prompt,
+        config: { temperature: 0.2 }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error resumint correus:', error);
+    return "Hi ha hagut un error en generar el resum dels correus.";
+  }
+}

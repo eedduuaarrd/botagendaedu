@@ -2,8 +2,9 @@ import TelegramBot from 'node-telegram-bot-api';
 import fs from 'fs';
 import cron from 'node-cron';
 import { config } from '../config/env.js';
-import { parseNaturalLanguage } from '../services/gemini.js';
+import { parseNaturalLanguage, summarizeEmails } from '../services/gemini.js';
 import { createEvent, listUpcomingEvents, deleteEventById, searchEvent, updateEvent } from '../services/calendar.js';
+import { fetchRecentEmails } from '../services/gmail.js';
 import { addHours } from 'date-fns';
 
 let bot;
@@ -65,15 +66,28 @@ export function setupBot() {
         
         if (!events || events.length === 0) {
            bot.sendMessage(activeChatId, `🌅 <b>Bon dia!</b>\nAvui tens el dia completament lliure, no hi ha cap esdeveniment programat.`, {parse_mode: 'HTML'});
-           return;
+        } else {
+           let text = `🌅 <b>Bon dia! Aquí tens el resum de la teva agenda per avui:</b>\n\n`;
+           events.forEach((ev) => {
+             const timeStr = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Tot el dia';
+             text += `🔹 <b>${timeStr}</b> - ${ev.summary}\n`;
+           });
+           bot.sendMessage(activeChatId, text, {parse_mode: 'HTML'});
         }
 
-        let text = `🌅 <b>Bon dia! Aquí tens el resum de la teva agenda per avui:</b>\n\n`;
-        events.forEach((ev) => {
-          const timeStr = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Tot el dia';
-          text += `🔹 <b>${timeStr}</b> - ${ev.summary}\n`;
-        });
-        bot.sendMessage(activeChatId, text, {parse_mode: 'HTML'});
+        try {
+          const emails = await fetchRecentEmails(24);
+          if (emails.length === 0) {
+            bot.sendMessage(activeChatId, "📧 <b>Correus:</b> No tens correus nous de les últimes 24 hores.", {parse_mode: 'HTML'});
+          } else {
+            const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
+            const summary = await summarizeEmails(emailsText);
+            bot.sendMessage(activeChatId, `📧 <b>Resum de correus (últimes 24h):</b>\n\n${summary}`, {parse_mode: 'HTML'});
+          }
+        } catch (emailErr) {
+          console.error("Error processant correus diaris:", emailErr);
+          bot.sendMessage(activeChatId, "📧 No he pogut llegir el teu Gmail per fer el resum. Recorda que has d'haver acceptat els permisos de Gmail quan vas iniciar sessió.", {parse_mode: 'HTML'});
+        }
       } catch (error) {
         console.error("Error al cron diari:", error);
       }
@@ -84,7 +98,26 @@ export function setupBot() {
 
   bot.onText(/\/start/, (msg) => {
     saveChatId(msg.chat.id);
-    bot.sendMessage(msg.chat.id, "👋 <b>Hola! Sóc el teu assistent d'agenda.</b>\n\nDigue'm què vols fer amb missatges de veu o text, per exemple:\n\n✨ <i>'Afegeix una reunió demà a les 10'</i>\n🎙️ <i>(També em pots enviar notes de veu)</i>\n📅 <i>'Què tinc avui?'</i>\n⚙️ <i>'Vull que les meves reunions durin 45 minuts per defecte'</i>", { parse_mode: 'HTML' });
+    bot.sendMessage(msg.chat.id, "👋 <b>Hola! Sóc el teu assistent d'agenda.</b>\n\nDigue'm què vols fer amb missatges de veu o text, per exemple:\n\n✨ <i>'Afegeix una reunió demà a les 10'</i>\n🎙️ <i>(També em pots enviar notes de veu)</i>\n📅 <i>'Què tinc avui?'</i>\n⚙️ <i>'Vull que les meves reunions durin 45 minuts per defecte'</i>\n📧 <i>Pots escriure /correus per veure el resum de Gmail!</i>", { parse_mode: 'HTML' });
+  });
+
+  bot.onText(/\/correus/, async (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, "⏳ <i>Llegint i resumint els correus de les últimes 24h...</i>", {parse_mode: 'HTML'});
+    bot.sendChatAction(chatId, 'typing');
+    try {
+      const emails = await fetchRecentEmails(24);
+      if (emails.length === 0) {
+        bot.sendMessage(chatId, "📧 <b>Correus:</b> No tens correus nous de les últimes 24 hores.", {parse_mode: 'HTML'});
+      } else {
+        const emailsText = emails.map(e => `De: ${e.from}\nAssumpte: ${e.subject}\nResum: ${e.snippet}\n---`).join('\n');
+        const summary = await summarizeEmails(emailsText);
+        bot.sendMessage(chatId, `📧 <b>Resum de correus (últimes 24h):</b>\n\n${summary}`, {parse_mode: 'HTML'});
+      }
+    } catch (emailErr) {
+      console.error("Error processant correus manuals:", emailErr);
+      bot.sendMessage(chatId, "❌ No he pogut llegir el teu Gmail. Has acceptat els permisos?", {parse_mode: 'HTML'});
+    }
   });
 
   bot.on('message', async (msg) => {

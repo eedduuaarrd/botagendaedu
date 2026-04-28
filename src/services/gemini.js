@@ -61,7 +61,7 @@ Missatge actual de l'usuari (pot estar buit si només t'ha enviat un àudio): "$
 
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.1-flash-lite',
         contents: parts,
         config: { temperature: 0.1 }
     });

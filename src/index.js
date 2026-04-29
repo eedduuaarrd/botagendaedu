@@ -1,4 +1,7 @@
 import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { config } from './config/env.js';
 import { setupBot } from './bot/telegram.js';
 import { getAuthUrl, loadSavedCredentialsIfExist, saveCredentials, oauth2Client } from './config/googleAuth.js';
@@ -6,8 +9,7 @@ import { createEvent, listUpcomingEvents, deleteEventById, updateEvent, searchEv
 import { WeatherAgent } from './agents/WeatherAgent.js';
 import { ManagerAgent } from './agents/ManagerAgent.js';
 import { MailAgent } from './agents/MailAgent.js';
-import path from 'path';
-import fs from 'fs';
+import { fetchRecentEmails } from './services/gmail.js';
 import { fetchWeatherDetailed } from './services/weather.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -161,10 +163,52 @@ app.post('/api/preferences', (req, res) => {
 app.get('/api/emails', async (req, res) => {
   try {
     const summary = await MailAgent.getDailyEmailSummary();
-    res.json({ summary });
+    const recent = await fetchRecentEmails(24);
+    res.json({ summary, recent });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// 📝 Tasks (Local Persistence)
+const TASKS_FILE = path.join(__dirname, '../tasks.json');
+app.get('/api/tasks', (req, res) => {
+  try {
+    let tasks = [];
+    if (fs.existsSync(TASKS_FILE)) tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+    res.json(tasks);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/tasks', (req, res) => {
+  try {
+    const { task } = req.body;
+    let tasks = [];
+    if (fs.existsSync(TASKS_FILE)) tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+    tasks.push({ id: Date.now(), text: task, completed: false });
+    fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/tasks/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    let tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+    tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+    fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/tasks/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    let tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+    tasks = tasks.filter(t => t.id !== id);
+    fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // 🔑 Google Auth Callback

@@ -76,21 +76,21 @@ export function setupBot() {
     saveChatId(msg.chat.id);
     const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${config.port}`;
     
-    const welcome = `✨ **Benvingut a l'Ecosistema Cyber-Premium** ✨
+    const welcome = `**Sistema de Gestió Edu**
 
-Hola Edu! He elevat la teva gestió personal a un nou nivell. Sóc el teu assistent de nova generació, dissenyat per oferir-te el màxim rendiment amb una estètica futurista.
+Hola Edu. He actualitzat la teva interfície de treball. Ara disposes d'una plataforma més robusta, minimalista i centrada en l'eficiència.
 
-Pots interactuar amb mi aquí mateix o obrir la **Cyber-App** per a una experiència visual immersiva.
+Pots gestionar la teva agenda directament des de la **Mini App** per a un control total.
 
-Què vols optimitzar avui? 🚀`;
+Com vols procedir avui?`;
 
     bot.sendMessage(msg.chat.id, welcome, { 
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: "🌌 Entrar a la Cyber-App", web_app: { url: baseUrl } }],
-          [{ text: "📊 Status d'avui", callback_data: 'query_today' }, { text: "📧 Inbox Intelligence", callback_data: 'query_mails' }],
-          [{ text: "🌤️ Atmosfera Balaguer", callback_data: 'query_weather' }]
+          [{ text: "Accedir a la Plataforma", web_app: { url: baseUrl } }],
+          [{ text: "Estat de l'Agenda", callback_data: 'query_today' }, { text: "Resum de Correu", callback_data: 'query_mails' }],
+          [{ text: "Previsió Meteorològica", callback_data: 'query_weather' }]
         ]
       }
     });
@@ -98,7 +98,7 @@ Què vols optimitzar avui? 🚀`;
 
   bot.onText(/\/correus/, async (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, "⏳ Un moment, vaig a veure els teus emails...");
+    bot.sendMessage(chatId, "Processant correus electrònics...");
     bot.sendChatAction(chatId, 'typing');
     try {
       const summary = await MailAgent.getDailyEmailSummary();

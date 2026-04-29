@@ -3,179 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Edu Agenda - Cyber Premium</title>
+    <title>Edu Agenda - Stealth</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.1.0/font/lucide.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Mesh Background -->
-    <div class="mesh-bg"></div>
-
     <div id="app">
         <!-- HEADER -->
         <header>
             <div class="user-profile">
-                <div class="avatar-wrapper">
-                    <img id="user-photo" src="https://via.placeholder.com/150" alt="Avatar">
-                    <div class="status-dot"></div>
-                </div>
-                <div class="greeting-text">
-                    <h1 id="greeting">Hola!</h1>
-                    <p id="date-display">Actualitzant...</p>
-                </div>
+                <h1 id="greeting">Hola!</h1>
+                <p id="date-display">--</p>
             </div>
-            <button class="btn-circle" id="search-toggle">
-                <i class="lucide-search"></i>
-            </button>
         </header>
 
-        <!-- SEARCH BAR (HIDDEN BY DEFAULT) -->
-        <div id="search-area" class="glass-card hidden" style="margin-bottom: 20px; padding: 12px 18px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="lucide-search" style="color: var(--text-secondary);"></i>
-                <input type="text" id="global-search" placeholder="Busca esdeveniments..." style="background: none; border: none; color: white; flex: 1; outline: none;">
-            </div>
-        </div>
-
-        <!-- TAB CONTENTS -->
+        <!-- MAIN -->
         <main>
             <!-- TAB: HOME -->
             <section id="tab-home" class="tab-content active">
-                <!-- Weather Widget -->
-                <div class="weather-widget">
+                <!-- Weather Compact -->
+                <div class="card weather-compact">
                     <div>
-                        <span class="temp-main" id="temp-val">--°</span>
-                        <div class="weather-stats">
-                            <span><i class="lucide-droplets"></i> <span id="humidity">--</span>%</span>
-                            <span><i class="lucide-wind"></i> <span id="wind">--</span> km/h</span>
+                        <span class="temp-large" id="temp-val">--°</span>
+                        <div style="font-size: 0.8rem; opacity: 0.6;" id="weather-desc">Actualitzant...</div>
+                    </div>
+                    <div class="weather-details">
+                        <div id="wind-val">Vent: -- km/h</div>
+                        <div id="humidity-val">Humitat: --%</div>
+                    </div>
+                </div>
+
+                <!-- Briefing Card -->
+                <div class="section-title">Resum Executiu</div>
+                <div class="card" id="summary-content" style="font-size: 0.9rem; opacity: 0.9;">
+                    Carregant briefing...
+                </div>
+
+                <!-- Split View: Emails & Tasks -->
+                <div style="display: grid; grid-template-columns: 1fr; gap: 0px;">
+                    <div>
+                        <div class="section-title">Emails Recents</div>
+                        <div class="card" id="email-list-container">
+                            <div class="text-center" style="opacity: 0.5; padding: 20px;">Busca de correus...</div>
                         </div>
                     </div>
-                    <div class="weather-info">
-                        <i id="weather-icon-large" style="font-size: 2.5rem; margin-bottom: 8px; display: block;">☀️</i>
-                        <span id="weather-desc">Cargant...</span>
+                    
+                    <div>
+                        <div class="section-title">Tasques Pendents</div>
+                        <div class="card">
+                            <div id="task-list-container"></div>
+                            <div class="mt-4" style="display: flex; gap: 8px;">
+                                <input type="text" id="new-task-input" class="input-flat" placeholder="Nova tasca..." style="padding: 8px 12px;">
+                                <button id="add-task-btn" style="background: white; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: 700;">+</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Stats Grid -->
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-val" id="stat-total">0</span>
-                        <span class="stat-label">Events / 7d</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-val" id="stat-work">0</span>
-                        <span class="stat-label">Work / 7d</span>
-                    </div>
-                </div>
-
-                <h2 class="card-section-title"><i class="lucide-zap"></i> Quick Summary</h2>
-                <div class="glass-card" id="summary-content">
-                    <div class="loading"><div class="skeleton" style="height: 60px;"></div></div>
-                </div>
-
-                <h2 class="card-section-title"><i class="lucide-calendar"></i> Next Events</h2>
-                <div class="glass-card">
-                    <div id="preview-list"></div>
-                </div>
+                <!-- Next Events -->
+                <div class="section-title">Propers Esdeveniments</div>
+                <div class="card" id="preview-list"></div>
             </section>
 
             <!-- TAB: CALENDAR -->
             <section id="tab-calendar" class="tab-content">
-                <h2 class="title-large">Your Timeline</h2>
+                <div class="section-title">Línia de Temps</div>
                 <div id="full-agenda-list"></div>
             </section>
 
-            <!-- TAB: AI CHAT -->
+            <!-- TAB: ASSISTANT -->
             <section id="tab-ai" class="tab-content">
-                <h2 class="title-large">Assistant</h2>
-                <div id="chat-container">
-                    <div id="chat-messages"></div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chat-input" placeholder="Ask anything...">
-                        <button id="record-voice" class="btn-circle" style="background: rgba(255,255,255,0.1); color: white;">
-                            <i class="lucide-mic"></i>
-                        </button>
-                        <button id="send-msg" class="btn-circle">
-                            <i class="lucide-send"></i>
-                        </button>
-                    </div>
+                <div class="section-title">Assistent Virtual</div>
+                <div id="chat-messages"></div>
+                <div class="mt-4" style="display: flex; gap: 10px;">
+                    <input type="text" id="chat-input" class="input-flat" placeholder="En què et puc ajudar?">
+                    <button id="send-msg" class="btn-action" style="width: auto;">Enviar</button>
                 </div>
             </section>
 
             <!-- TAB: SETTINGS -->
             <section id="tab-settings" class="tab-content">
-                <h2 class="title-large">System</h2>
-                <div class="glass-card">
-                    <h3 style="margin-bottom: 20px; font-size: 1rem;">Preferences</h3>
-                    <div class="setting-item">
-                        <label>Summary Time</label>
-                        <input type="time" id="pref-summary-time">
+                <div class="section-title">Configuració</div>
+                <div class="card">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">HORA DEL BRIEFING</label>
+                        <input type="time" id="pref-summary-time" class="input-flat">
                     </div>
-                    <div class="setting-item">
-                        <label>Default Duration (min)</label>
-                        <input type="number" id="pref-duration">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">DURADA PER DEFECTE (MIN)</label>
+                        <input type="number" id="pref-duration" class="input-flat">
                     </div>
-                    <button id="save-prefs" class="btn-primary">Sync Preferences</button>
+                    <button id="save-prefs" class="btn-action mt-4">Guardar Canvis</button>
                 </div>
-                
-                <div class="glass-card" style="border-color: rgba(255, 77, 77, 0.2);">
-                    <h3 style="margin-bottom: 12px; font-size: 1rem; color: var(--danger);">Danger Zone</h3>
-                    <button id="reauth-btn" class="btn-secondary" style="color: var(--danger);">Reset Auth</button>
+                <div class="card" style="border-color: rgba(239, 68, 68, 0.3);">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--danger); margin-bottom: 8px;">ZONA CRÍTICA</div>
+                    <button id="reauth-btn" class="btn-action" style="background: var(--danger); color: white;">Reiniciar Autorització</button>
                 </div>
             </section>
         </main>
 
-        <!-- FLOATING NAV -->
-        <nav class="nav-floating">
-            <button class="nav-item active" data-tab="home">
-                <i class="lucide-home"></i>
-                <span>Home</span>
-            </button>
-            <button class="nav-item" data-tab="calendar">
-                <i class="lucide-calendar-days"></i>
-                <span>Plan</span>
-            </button>
-            <button class="nav-item" data-tab="ai">
-                <i class="lucide-sparkles"></i>
-                <span>AI</span>
-            </button>
-            <button class="nav-item" data-tab="settings">
-                <i class="lucide-sliders"></i>
-                <span>Setup</span>
-            </button>
+        <!-- SYSTEM NAV -->
+        <nav class="system-nav">
+            <button class="nav-link active" data-tab="home">Inici</button>
+            <button class="nav-link" data-tab="calendar">Planer</button>
+            <button class="nav-link" data-tab="ai">IA</button>
+            <button class="nav-link" data-tab="settings">Config</button>
         </nav>
     </div>
 
     <!-- FAB -->
-    <button class="btn-circle add-btn" style="position: fixed; bottom: 100px; right: 25px; width: 60px; height: 60px; z-index: 999; font-size: 1.8rem;">
-        <i class="lucide-plus"></i>
-    </button>
+    <button class="fab add-btn">+</button>
 
     <!-- MODAL -->
-    <div id="event-modal" class="modal hidden">
-        <div class="modal-content glass-card" style="background: rgba(15,17,26,0.95); backdrop-filter: blur(40px);">
-            <h3 style="margin-bottom: 24px; font-size: 1.4rem;">New Event</h3>
-            <div class="form-group">
-                <label>Title</label>
-                <input type="text" id="ev-title" placeholder="Meeting with...">
+    <div id="event-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <div class="card" style="width: 100%; max-width: 400px; padding: 30px;">
+            <h3 style="margin-bottom: 24px;">Nou Esdeveniment</h3>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">TÍTOL</label>
+                <input type="text" id="ev-title" class="input-flat" placeholder="Reunió...">
             </div>
-            <div class="form-group-row">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
                 <div>
-                    <label>Date</label>
-                    <input type="date" id="ev-date">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">DATA</label>
+                    <input type="date" id="ev-date" class="input-flat">
                 </div>
                 <div>
-                    <label>Time</label>
-                    <input type="time" id="ev-time">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">HORA</label>
+                    <input type="time" id="ev-time" class="input-flat">
                 </div>
             </div>
-            <div class="modal-actions">
-                <button id="close-modal" class="btn-text">Cancel</button>
-                <button id="submit-event" class="btn-primary">Schedule</button>
+            <div style="display: flex; gap: 12px;">
+                <button id="close-modal" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer;">Cancel·lar</button>
+                <button id="submit-event" class="btn-action">Crear</button>
             </div>
         </div>
     </div>

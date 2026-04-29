@@ -50,7 +50,8 @@ async function callGemini(prompt, cfg = {}) {
 export async function parseNaturalLanguage(text, currentDateString, historyStr = "", audioData = null) {
   if (!ai) throw new Error("Gemini API key is not configured");
 
-  const prompt = `Ets en Bot, l'assistent personal de l'Edu. Parles català col·loquial com un amic de confiança. Ara t'arriba un missatge i has d'identificar la intenció i retornar un JSON.
+  const prompt = `Ets el Sistema de Gestió Personal de l'Edu. El teu to ha de ser professional, formal, seriós i minimalista. Parles un català correcte i elegant, sense col·loquialismes innecessaris. La teva missió és processar les peticions de l'usuari amb la màxima eficiència.
+
 Data i hora actual: ${currentDateString}
 
 Retorna ÚNICAMENT un JSON vàlid:
@@ -69,12 +70,12 @@ Retorna ÚNICAMENT un JSON vàlid:
   "participants": ["noms o emails"],
   "preferences": { "summaryTime": "HH:MM", "defaultDuration": 30 },
   "confidence": 0.9,
-  "reply_message": "Resposta breu i col·loquial per enviar a l'Edu"
+  "reply_message": "Resposta formal, breu i executiva en català."
 }
 
 REGLES (segueix-les sempre):
 - OMET les claus que no facin falta per a la intenció actual.
-- TÍTOLS: Fes el títol de l'event descriptiu. Si menciona persona o empresa, inclou-ho (ex: "Reunió RRHH - Teixidó").
+- TÍTOLS: Fes el títol de l'event descriptiu i formal.
 - AGENDA: Si pregunta "quins tinc" o "propers", date i date_end a null. Si demana un rang ("aquesta setmana"), emplena'ls.
 - PREFERÈNCIES: Si vol canviar l'hora del resum o la durada de les reunions → intent "update_preferences".
 - TEMPS: Si pregunta el temps (avui, demà, cap de setmana...) → intent "query_weather" SEMPRE. Tens accés al clima.
@@ -85,12 +86,12 @@ REGLES (segueix-les sempre):
 - Si rep un ÀUDIO, transcriu i dedueix la intenció.
 - Usa l'historial per entendre context. Si diu "mou-ho", referencia l'event del que parlava.
 - Hores sempre en format 24h.
-- reply_message: curt, directe, emojis, com un WhatsApp entre amics. En català sempre.
+- reply_message: formal, directe, professional. Sense emojis innecessaris.
 
 HISTORIAL:
 ${historyStr || "(cap)"}
 
-Missatge de l'Edu: "${text || ''}"`;
+Missatge de l'Usuari: "${text || ''}"`;
 
   let contents;
   if (audioData) {
@@ -122,8 +123,7 @@ export async function summarizeEmails(emailsText) {
   // Limitar text per evitar excedir tokens (5000 chars ~= ~1250 tokens, segur per al free tier)
   const truncatedEmails = emailsText.substring(0, 5000);
   
-  const prompt = `Resumeix aquests correus en català col·loquial, com un WhatsApp entre amics. MOLT breu.
-Agrupa la publicitat/alertes en una frase. Destaca el que realment importa. Màxim 5-6 línies.
+  const prompt = `Proporcioneu un resum executiu i professional en català dels següents correus electrònics. Sigueu directe, minimalista i seriós. Agrupeu la informació per rellevància operativa.
 
 CORREUS:\n${truncatedEmails}`;
 
@@ -133,9 +133,9 @@ CORREUS:\n${truncatedEmails}`;
     console.error('Error resumint correus:', error?.message || error);
     const isQuota = error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.toLowerCase().includes('rate');
     if (isQuota) {
-      return "📧 Resum de correus:\n\nOstres, la IA té la quota plena ara mateix 😅 Torna-ho a provar en uns minuts o usa /correus.";
+      return "Resum de correus: La capacitat d'anàlisi està temporalment saturada. Si us plau, torni-ho a provar més tard.";
     }
-    return `📧 Resum de correus:\n\nNo he pogut resumir els correus: ${error?.message?.substring(0, 100) || 'Error desconegut'}.`;
+    return `Resum de correus: No s'ha pogut completar el resum: ${error?.message?.substring(0, 100) || 'Error desconegut'}.`;
   }
 }
 
@@ -143,43 +143,41 @@ export async function answerEmailQuery(emailsText, userQuestion) {
   if (!ai) throw new Error("Gemini API key is not configured");
   
   const truncatedEmails = emailsText.substring(0, 5000);
-  const prompt = `L'Edu t'ha preguntat això sobre els seus correus recents: "${userQuestion}"
+  const prompt = `L'usuari sol·licita informació sobre la seva bústia: "${userQuestion}"
 
-Aquí tens els correus recents:
-${truncatedEmails}
+Analitzeu els correus recents i responeu de forma professional, formal i concisa en català.
 
-Respon de forma MOLT breu i directa en català col·loquial. Si no ho trobes, digues "No he vist res sobre això als teus correus".`;
+CORREUS RECENTS:
+${truncatedEmails}`;
 
   try {
     return await callGemini(prompt, { temperature: 0.2 });
   } catch (error) {
     console.error('Error responent consulta correus:', error?.message || error);
     const isQuota = error?.message?.includes('429') || error?.message?.includes('quota');
-    if (isQuota) return "Ostres, no he pogut analitzar els correus perquè la IA està saturada ara mateix 😅";
-    return "Ostres, no he pogut analitzar els correus en aquest moment.";
+    if (isQuota) return "No he pogut analitzar els correus a causa d'una saturació temporal del sistema.";
+    return "No s'ha pogut realitzar la consulta dels correus en aquest moment.";
   }
 }
 
 export async function generateMorningGreeting(eventsText, weatherText) {
   if (!ai) return `Bon dia! Aquí tens el teu dia:\n\n${eventsText}\n\n${weatherText}`;
   
-  const prompt = `Ets el millor amic de l'Edu i cada matí li envies un missatge de WhatsApp per arrancar el dia.
-Ha de ser MOLT col·loquial, amb confiança total, energètic i positiu però sense ser pesat.
-Inclou: un salut original (no sempre "bon dia"), el resum de l'agenda d'avui i una recomanació pràctica sobre la roba o si agafar paraigua.
+  const prompt = `Genereu un informe matinal executiu per a l'Edu. El to ha de ser formal, sobri i eficient.
 
-AGENDA D'AVUI:
-${eventsText}
+Estructura:
+1. Salutació formal.
+2. Resum operatiu de l'agenda del dia.
+3. Observació meteorològica i recomanació logística (vestimenta o desplaçaments).
 
-TEMPS A BALAGUER:
-${weatherText}
+DADES:
+Agenda: ${eventsText}
+Temps: ${weatherText}
 
 Normes:
-- Escriu com si li enviessis un WhatsApp de veritat, no un email formal.
-- Varia el salut cada dia (pot ser "ei tio!", "va, espavila!", "ostres ja és de dia!", etc.)
-- Si l'agenda és buida, celebra-ho com cal! 🎉
-- El consell de roba ha de ser concret i pràctic (samarreta, jaqueta, bufanda, paraigua, etc.)
-- Emojis sí, però que quedin naturals.
-- Màxim 5-6 línies en total. Breu però complet.`;
+- Màxima concisió.
+- Llenguatge professional.
+- Ús mínim d'emojis (només si ajuden a la claredat informativa).`;
 
   try {
     return await callGemini(prompt, { temperature: 0.6 });

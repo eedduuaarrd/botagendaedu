@@ -201,13 +201,65 @@ app.put('/api/tasks/:id', (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/tasks/:id', (req, res) => {
+// 💰 Finance (Local Persistence)
+const FINANCE_FILE = path.join(__dirname, '../finance.json');
+app.get('/api/finance', (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    let tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
-    tasks = tasks.filter(t => t.id !== id);
-    fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
-    res.json({ success: true });
+    let data = { balance: 0, transactions: [] };
+    if (fs.existsSync(FINANCE_FILE)) data = JSON.parse(fs.readFileSync(FINANCE_FILE, 'utf8'));
+    res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/finance', (req, res) => {
+  try {
+    const { amount, note, type } = req.body;
+    let data = { balance: 0, transactions: [] };
+    if (fs.existsSync(FINANCE_FILE)) data = JSON.parse(fs.readFileSync(FINANCE_FILE, 'utf8'));
+    
+    const val = parseFloat(amount);
+    data.balance += (type === 'income' ? val : -val);
+    data.transactions.unshift({ id: Date.now(), amount: val, note, type, date: new Date().toISOString() });
+    data.transactions = data.transactions.slice(0, 50); // Keep last 50
+    
+    fs.writeFileSync(FINANCE_FILE, JSON.stringify(data, null, 2));
+    res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ✅ Habits (Local Persistence)
+const HABITS_FILE = path.join(__dirname, '../habits.json');
+app.get('/api/habits', (req, res) => {
+  try {
+    let habits = [];
+    if (fs.existsSync(HABITS_FILE)) habits = JSON.parse(fs.readFileSync(HABITS_FILE, 'utf8'));
+    res.json(habits);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/habits', (req, res) => {
+  try {
+    const { name } = req.body;
+    let habits = [];
+    if (fs.existsSync(HABITS_FILE)) habits = JSON.parse(fs.readFileSync(HABITS_FILE, 'utf8'));
+    habits.push({ id: Date.now(), name, history: {} });
+    fs.writeFileSync(HABITS_FILE, JSON.stringify(habits, null, 2));
+    res.json(habits);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/habits/toggle', (req, res) => {
+  try {
+    const { id, date } = req.body;
+    let habits = JSON.parse(fs.readFileSync(HABITS_FILE, 'utf8'));
+    habits = habits.map(h => {
+      if (h.id === id) {
+        h.history[date] = !h.history[date];
+      }
+      return h;
+    });
+    fs.writeFileSync(HABITS_FILE, JSON.stringify(habits, null, 2));
+    res.json(habits);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

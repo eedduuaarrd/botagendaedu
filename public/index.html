@@ -2,149 +2,143 @@
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Edu Agenda - Stealth</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Executive OS</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
     <div id="app">
         <!-- HEADER -->
         <header>
-            <div class="user-profile">
-                <h1 id="greeting">Hola!</h1>
-                <p id="date-display">--</p>
+            <div class="profile-section">
+                <h1 id="greeting">Hola Edu</h1>
+                <p id="date-display">CARREGANT SISTEMA...</p>
+            </div>
+            <div class="status-indicator">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success);"></div>
             </div>
         </header>
 
-        <!-- MAIN -->
+        <!-- VIEWS -->
         <main>
-            <!-- TAB: HOME -->
-            <section id="tab-home" class="tab-content active">
-                <!-- Weather Compact -->
-                <div class="card weather-compact">
-                    <div>
-                        <span class="temp-large" id="temp-val">--°</span>
-                        <div style="font-size: 0.8rem; opacity: 0.6;" id="weather-desc">Actualitzant...</div>
-                    </div>
-                    <div class="weather-details">
-                        <div id="wind-val">Vent: -- km/h</div>
-                        <div id="humidity-val">Humitat: --%</div>
-                    </div>
-                </div>
-
-                <!-- Briefing Card -->
-                <div class="section-title">📊 Resum Executiu</div>
-                <div class="card" id="summary-content" style="font-size: 0.9rem; line-height: 1.6; border-left: 2px solid var(--accent);">
-                    Carregant briefing...
-                </div>
-
-                <!-- Split View: Emails & Tasks -->
-                <div style="display: grid; grid-template-columns: 1fr; gap: 0px;">
-                    <div>
-                        <div class="section-title">📧 Emails Recents</div>
-                        <div class="card" id="email-list-container" style="max-height: 250px; overflow-y: auto;">
-                            <div class="text-center" style="opacity: 0.5; padding: 20px;">Busca de correus...</div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div class="section-title">📝 Tasques Pendents</div>
-                        <div class="card">
-                            <div id="task-list-container"></div>
-                            <div class="mt-4" style="display: flex; gap: 8px;">
-                                <input type="text" id="new-task-input" class="input-flat" placeholder="Afegir tasca ràpida..." style="padding: 8px 12px; font-size: 0.85rem;">
-                                <button id="add-task-btn" style="background: white; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: 700;">+</button>
+            <!-- TAB: DASHBOARD -->
+            <section id="view-home" class="tab-view active">
+                <div class="dashboard-grid">
+                    <!-- Weather Widget -->
+                    <div class="widget widget-full">
+                        <div class="widget-title"><i data-lucide="cloud-sun"></i> Clima & Previsió</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                            <div>
+                                <span class="balance-val" id="temp-val">--°</span>
+                                <p id="weather-desc" style="font-size: 0.8rem; color: var(--text-muted);">Actualitzant...</p>
+                            </div>
+                            <div style="width: 100px; height: 40px;">
+                                <canvas id="weather-mini-chart"></canvas>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Next Events -->
-                <div class="section-title">🗓️ Propers Esdeveniments</div>
-                <div class="card" id="preview-list"></div>
-            </section>
-
-            <!-- TAB: CALENDAR -->
-            <section id="tab-calendar" class="tab-content">
-                <div class="section-title">Timeline d'Activitats</div>
-                <div id="full-agenda-list"></div>
-            </section>
-
-            <!-- TAB: ASSISTANT -->
-            <section id="tab-ai" class="tab-content">
-                <div class="section-title">🤖 Assistent Intel·ligent</div>
-                <div id="chat-messages" class="card" style="height: 60vh; margin-bottom: 12px; padding: 15px;"></div>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="chat-input" class="input-flat" placeholder="Escriu la teva consulta...">
-                    <button id="send-msg" class="btn-action" style="width: auto; padding: 0 20px;">Enviar</button>
-                </div>
-                <div style="margin-top: 12px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
-                    <button class="quick-cmd" onclick="quickAi('Què tinc avui?')">Avui</button>
-                    <button class="quick-cmd" onclick="quickAi('Resumeix emails')">Emails</button>
-                    <button class="quick-cmd" onclick="quickAi('Tinc temps lliure demà?')">Temps Lliure</button>
-                </div>
-            </section>
-
-            <!-- TAB: SETTINGS -->
-            <section id="tab-settings" class="tab-content">
-                <div class="section-title">⚙️ Configuració del Sistema</div>
-                <div class="card">
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Hora del Resum Diari</label>
-                        <input type="time" id="pref-summary-time" class="input-flat">
+                    <!-- Finance Widget -->
+                    <div class="widget" id="open-finance">
+                        <div class="widget-title"><i data-lucide="wallet"></i> Finançes</div>
+                        <span class="balance-val" id="balance-display">0€</span>
+                        <p style="font-size: 0.7rem; color: var(--success);">+0% aquest mes</p>
                     </div>
-                    <div>
-                        <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Durada reunions (min)</label>
-                        <input type="number" id="pref-duration" class="input-flat">
+
+                    <!-- Habits Widget -->
+                    <div class="widget" id="open-habits">
+                        <div class="widget-title"><i data-lucide="check-circle"></i> Hàbits</div>
+                        <div id="habits-preview" style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                            <p style="font-size: 0.8rem; opacity: 0.5;">Sense hàbits actius</p>
+                        </div>
                     </div>
-                    <button id="save-prefs" class="btn-action mt-4">Sincronitzar Preferències</button>
+
+                    <!-- Briefing Widget -->
+                    <div class="widget widget-full">
+                        <div class="widget-title"><i data-lucide="zap"></i> Briefing Executiu</div>
+                        <div id="summary-content" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-main);">
+                            Generant informe de situació...
+                        </div>
+                    </div>
                 </div>
-                <div class="card" style="border-color: rgba(239, 68, 68, 0.2);">
-                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--danger); margin-bottom: 12px; text-transform: uppercase;">Manteniment</div>
-                    <button id="reauth-btn" class="btn-action" style="background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2);">Reiniciar Google Auth</button>
+
+                <div class="section-title"><i data-lucide="calendar"></i> Propers Esdeveniments</div>
+                <div class="list-container" id="preview-list"></div>
+            </section>
+
+            <!-- TAB: AGENDA -->
+            <section id="view-calendar" class="tab-view">
+                <div class="section-title"><i data-lucide="clock"></i> Línia de Temps</div>
+                <div id="full-agenda-list" class="list-container"></div>
+            </section>
+
+            <!-- TAB: INTELLIGENCE -->
+            <section id="view-ai" class="tab-view">
+                <div class="section-title"><i data-lucide="bot"></i> Intel·ligència Artificial</div>
+                <div id="chat-messages" style="height: 55vh; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px;"></div>
+                <div style="position: sticky; bottom: 0; background: var(--bg-primary); padding-top: 10px;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="chat-input" class="input-field" placeholder="Consulta el sistema..." style="margin-bottom: 0;">
+                        <button id="send-msg" class="btn-primary" style="width: 60px; padding: 0;"><i data-lucide="send"></i></button>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px;">
+                        <button class="btn-secondary" style="font-size: 0.7rem; padding: 8px 12px; width: auto;" onclick="quickAi('Resum de correus')">Emails</button>
+                        <button class="btn-secondary" style="font-size: 0.7rem; padding: 8px 12px; width: auto;" onclick="quickAi('Estat de l\'agenda')">Agenda</button>
+                        <button class="btn-secondary" style="font-size: 0.7rem; padding: 8px 12px; width: auto;" onclick="quickAi('Analitza finançes')">Finançes</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: VAULT (Finance & Stats) -->
+            <section id="view-vault" class="tab-view">
+                <div class="section-title"><i data-lucide="database"></i> El Vault</div>
+                <div class="widget widget-full">
+                    <div class="widget-title">Historial de Transaccions</div>
+                    <div id="finance-history" class="list-container" style="max-height: 200px; overflow-y: auto;"></div>
+                    <div class="mt-4" style="display: flex; gap: 10px; margin-top: 15px;">
+                        <input type="number" id="finance-amount" class="input-field" placeholder="0.00" style="margin-bottom: 0;">
+                        <button id="add-expense" class="btn-primary" style="width: auto; padding: 0 20px;">Afegir</button>
+                    </div>
+                </div>
+                
+                <div class="widget widget-full" style="margin-top: 20px;">
+                    <div class="widget-title">Emails de la darrera sessió</div>
+                    <div id="email-list-container" class="list-container"></div>
                 </div>
             </section>
         </main>
 
-        <!-- SYSTEM NAV -->
-        <nav class="system-nav">
-            <button class="nav-link active" data-tab="home">Inici</button>
-            <button class="nav-link" data-tab="calendar">Agenda</button>
-            <button class="nav-link" data-tab="ai">IA</button>
-            <button class="nav-link" data-tab="settings">Estat</button>
+        <!-- NAVIGATION -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-view="home"><i data-lucide="layout-grid"></i><span>Inici</span></button>
+            <button class="nav-item" data-view="calendar"><i data-lucide="calendar"></i><span>Agenda</span></button>
+            <button class="nav-item" data-view="ai"><i data-lucide="sparkles"></i><span>IA</span></button>
+            <button class="nav-item" data-view="vault"><i data-lucide="shield"></i><span>Vault</span></button>
         </nav>
     </div>
 
-    <!-- FAB -->
-    <button class="fab add-btn">+</button>
-
-    <!-- MODAL -->
-    <div id="event-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3 style="margin-bottom: 24px; font-weight: 700;">Nou Esdeveniment</h3>
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Títol</label>
-                <input type="text" id="ev-title" class="input-flat" placeholder="Introduir títol...">
+    <!-- MODAL: ADD EVENT -->
+    <div id="event-modal" class="modal-overlay hidden">
+        <div class="modal-sheet">
+            <h2 style="margin-bottom: 20px; font-weight: 800;">Nou Esdeveniment</h2>
+            <input type="text" id="ev-title" class="input-field" placeholder="Títol de l'esdeveniment">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <input type="date" id="ev-date" class="input-field">
+                <input type="time" id="ev-time" class="input-field">
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                <div>
-                    <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Data</label>
-                    <input type="date" id="ev-date" class="input-flat">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Hora</label>
-                    <input type="time" id="ev-time" class="input-flat">
-                </div>
-            </div>
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button id="close-modal" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; font-size: 0.9rem;">Cancel·lar</button>
-                <button id="submit-event" class="btn-action" style="width: auto; padding: 10px 24px;">Guardar</button>
-            </div>
+            <button id="submit-event" class="btn-primary" style="margin-top: 10px;">Sincronitzar</button>
+            <button id="close-modal" class="btn-secondary" style="margin-top: 10px;">Cancel·lar</button>
         </div>
     </div>
+
+    <!-- FAB -->
+    <button class="fab" id="open-modal-btn" style="position: fixed; bottom: 100px; right: 25px; background: white; color: black; border: none; width: 56px; height: 56px; border-radius: 28px; font-size: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); cursor: pointer; z-index: 900;">
+        <i data-lucide="plus"></i>
+    </button>
 
     <script src="app.js"></script>
 </body>

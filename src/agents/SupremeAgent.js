@@ -2,6 +2,8 @@ import { TerminalService } from '../services/terminal.js';
 import { FileSystemService } from '../services/filesystem.js';
 import { AIEditorService } from '../services/ai_editor.js';
 import { BrowserService } from '../services/browser.js';
+import { SSHService } from '../services/ssh.js';
+import { config } from '../config/env.js';
 import fs from 'fs';
 
 export class SupremeAgent {
@@ -11,7 +13,14 @@ export class SupremeAgent {
     try {
       switch (action) {
         case 'shell':
-          await this.handleShell(bot, chatId, command);
+          if (config.ssh.host) {
+            await this.handleSSH(bot, chatId, command);
+          } else {
+            await this.handleShell(bot, chatId, command);
+          }
+          break;
+        case 'ssh':
+          await this.handleSSH(bot, chatId, command);
           break;
         case 'read_file':
           await this.handleReadFile(bot, chatId, file_path);
@@ -97,6 +106,20 @@ export class SupremeAgent {
       }
     } catch (error) {
       bot.sendMessage(chatId, `❌ Error al navegador: ${error.message}`);
+    }
+  }
+  static async handleSSH(bot, chatId, command) {
+    if (!config.ssh.host) {
+      return bot.sendMessage(chatId, "⚠️ No has configurat les dades SSH al .env o a Render.");
+    }
+    bot.sendMessage(chatId, `🚀 Executant via SSH a **${config.ssh.host}**:\n\`${command}\``, { parse_mode: 'Markdown' });
+    
+    try {
+      const result = await SSHService.execute(command, config.ssh);
+      const output = result.stdout || result.stderr || "(fet)";
+      bot.sendMessage(chatId, `📤 **Sortida SSH:**\n\`\`\`\n${output.substring(0, 3000)}\n\`\`\``, { parse_mode: 'Markdown' });
+    } catch (error) {
+      bot.sendMessage(chatId, `❌ Error SSH: ${error.message}`);
     }
   }
 }

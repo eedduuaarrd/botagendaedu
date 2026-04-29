@@ -15,23 +15,36 @@ export class CalendarAgent {
     
     let overlapWarning = '';
     if (data.date && data.time) {
-      const eventsOfDay = await listUpcomingEvents(50, data.date, data.date);
-      const startStr = `${data.date}T${data.time}:00`;
-      let endStr = data.end_time ? `${data.date}T${data.end_time}:00` : null;
-      const addHours = (date, h) => { date.setTime(date.getTime() + (h*60*60*1000)); return date; }
-      
-      const newStart = new Date(startStr);
-      const newEnd = endStr ? new Date(endStr) : addHours(new Date(startStr), data.duration_minutes ? data.duration_minutes/60 : 1);
+      try {
+        const eventsOfDay = await listUpcomingEvents(50, data.date, data.date);
+        
+        // Ensure valid date objects
+        const startStr = `${data.date}T${data.time}:00`;
+        const newStart = new Date(startStr);
+        
+        if (isNaN(newStart.getTime())) throw new Error("Data/hora invàlida");
 
-      const overlapping = eventsOfDay.filter(ev => {
-         if (!ev.start.dateTime) return false;
-         const evStart = new Date(ev.start.dateTime);
-         const evEnd = new Date(ev.end.dateTime);
-         return (newStart < evEnd && newEnd > evStart);
-      });
+        let newEnd;
+        if (data.end_time) {
+          newEnd = new Date(`${data.date}T${data.end_time}:00`);
+        } else {
+          const duration = data.duration_minutes || userPrefs.defaultDuration || 60;
+          newEnd = new Date(newStart.getTime() + duration * 60000);
+        }
 
-      if (overlapping.length > 0) {
-         overlapWarning = `\n\n⚠️ <b>ATENCIÓ: Solapament detectat!</b>\nJa tens "<i>${overlapping[0].summary}</i>" programat a la mateixa hora.`;
+        const overlapping = eventsOfDay.filter(ev => {
+           if (!ev.start.dateTime) return false;
+           const evStart = new Date(ev.start.dateTime);
+           const evEnd = new Date(ev.end.dateTime);
+           return (newStart < evEnd && newEnd > evStart);
+        });
+
+        if (overlapping.length > 0) {
+           overlapWarning = `\n\n⚠️ <b>ATENCIÓ: Solapament detectat!</b>\nJa tens "<i>${overlapping[0].summary || 'un event'}</i>" programat a la mateixa hora.`;
+        }
+      } catch (err) {
+        console.error("Error mirant solapaments:", err);
+        // If it's an auth error, we might want to warn the user, but for now we just skip the warning
       }
     }
 

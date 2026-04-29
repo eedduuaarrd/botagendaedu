@@ -178,8 +178,13 @@ export function setupBot() {
           bot.sendMessage(chatId, `Entès! Però aquesta funció encara l'estic aprenent 🤓 Pots demanar-me coses de l'agenda, correus o el temps.`);
       }
     } catch (error) {
-      console.error(error);
-      bot.sendMessage(chatId, "Ostres, algo ha anat malament per la meva banda 😅 Torna-ho a provar!");
+      console.error("Error processant missatge:", error);
+      if (error.message.includes('auth') || error.message.includes('credentials') || error.status === 401) {
+        const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${config.port}`;
+        bot.sendMessage(chatId, `🔑 Sembla que no tinc permís per accedir al teu Google Calendar o Gmail. Si us plau, torna'm a autoritzar aquí:\n${baseUrl}/auth`);
+      } else {
+        bot.sendMessage(chatId, "Ostres, algo ha anat malament per la meva banda 😅 Torna-ho a provar en un moment!");
+      }
     }
   });
 

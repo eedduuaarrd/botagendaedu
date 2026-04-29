@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "postinstall": "puppeteer browsers install chrome"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@google/genai": "^1.50.1",

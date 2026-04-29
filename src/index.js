@@ -36,8 +36,9 @@ async function start() {
   
   const isAuthorized = await loadSavedCredentialsIfExist();
   if (!isAuthorized) {
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${config.port}`;
     console.log(`\n⚠️ Google Calendar not authorized.`);
-    console.log(`Please visit http://localhost:${config.port}/auth to authorize the application.\n`);
+    console.log(`Please visit ${baseUrl}/auth to authorize the application.\n`);
   } else {
     console.log('✅ Google Calendar is authorized.');
   }

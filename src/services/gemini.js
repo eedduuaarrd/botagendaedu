@@ -91,6 +91,9 @@ Missatge de l'Edu: "${text || ''}"`;
 export async function summarizeEmails(emailsText) {
   if (!ai) throw new Error("Gemini API key is not configured");
   
+  // Limitar text per evitar excedir tokens
+  const truncatedEmails = emailsText.substring(0, 8000);
+  
   const prompt = `Ets el meu amic de confiança que llegeix els meus correus i me'ls explica en 2 minuts.
 Fes un resum MOLT breu i col·loquial dels correus de les últimes 24h, com si m'ho expliquessis de paraula.
 Agrupa els que no importin en una frase ("molta publicitat i alertes de feina de sempre, res especial").
@@ -100,7 +103,7 @@ Si no hi ha res interessant, digues-m'ho directament sense floritures.
 Resposta en català col·loquial, super breu i fàcil de llegir d'un cop d'ull.
 
 CORREUS:
-${emailsText}`;
+${truncatedEmails}`;
 
   try {
     const response = await ai.models.generateContent({
@@ -110,8 +113,8 @@ ${emailsText}`;
     });
     return response.text;
   } catch (error) {
-    console.error('Error resumint correus:', error);
-    return "Ostres, m'he liat amb els correus. Torna-ho a provar!";
+    console.error('Error resumint correus:', error?.message || error);
+    return "Ostres, no he pogut resumir els correus. Pot ser un tema de quota de la IA.";
   }
 }
 
@@ -135,8 +138,8 @@ Català col·loquial, usa algun emoji, màxim 2-3 frases.`;
     });
     return response.text;
   } catch (error) {
-    console.error('Error responent consulta correus:', error);
-    return "Ostres, m'he liat buscant els correus. Torna-ho a provar!";
+    console.error('Error responent consulta correus:', error?.message || error);
+    return "Ostres, no he pogut analitzar els correus. Pot ser un tema de quota.";
   }
 }
 

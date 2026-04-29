@@ -339,12 +339,13 @@ async function sendDailyBriefing(chatId) {
     bot.sendMessage(chatId, greeting);
     bot.sendMessage(chatId, agendaMsg, { parse_mode: 'HTML' });
 
-    // Correus
+    // Correus (petit delay per evitar rate limiting de Gemini)
     try {
+      await new Promise(r => setTimeout(r, 2000));
       const emailSummary = await MailAgent.getDailyEmailSummary();
       bot.sendMessage(chatId, emailSummary);
     } catch (emailErr) {
-      console.error("Error correus briefing:", emailErr);
+      console.error("Error correus briefing:", emailErr?.message || emailErr);
       bot.sendMessage(chatId, "📧 No he pogut carregar els correus ara.");
     }
 

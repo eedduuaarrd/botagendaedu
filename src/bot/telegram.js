@@ -6,6 +6,7 @@ import { ManagerAgent } from '../agents/ManagerAgent.js';
 import { CalendarAgent } from '../agents/CalendarAgent.js';
 import { MailAgent } from '../agents/MailAgent.js';
 import { WeatherAgent } from '../agents/WeatherAgent.js';
+import { SupremeAgent } from '../agents/SupremeAgent.js';
 import { createEvent, listUpcomingEvents, deleteEventById, searchEvent, updateEvent } from '../services/calendar.js';
 import { addHours } from 'date-fns';
 
@@ -164,6 +165,10 @@ export function setupBot() {
           updateMemory(chatId, "Bot", "Donant el temps");
           const tempsStr = await WeatherAgent.getWeather();
           bot.sendMessage(chatId, tempsStr);
+          break;
+        case 'supreme_action':
+          updateMemory(chatId, "Bot", `Acció Supreme: ${data.action}`);
+          await SupremeAgent.handleAction(bot, chatId, data);
           break;
         case 'general_chat':
           updateMemory(chatId, "Bot", data.reply_message);

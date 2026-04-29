@@ -1,20 +1,14 @@
-import { GoogleGenAI } from '@google/genai';
-import { config } from '../src/config/env.js';
+import { searchEvent } from '../src/services/calendar.js';
+import { loadSavedCredentials } from '../src/config/googleAuth.js';
 
-async function test() {
-    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash-8b',
-            contents: 'Quin temps fa a balaguer dema a la tarde?',
-            config: { 
-                temperature: 0.7,
-                tools: [{ googleSearch: {} }]
-            }
-        });
-        console.log(response.text);
-    } catch (e) {
-        console.error("ERROR:", e.message);
-    }
+async function testSearch() {
+  await loadSavedCredentials();
+  const events = await searchEvent("padel");
+  console.log("Padel:", events.map(e => e.summary));
+  const events2 = await searchEvent("pàdel");
+  console.log("Pàdel:", events2.map(e => e.summary));
+  const events3 = await searchEvent("partit de padel");
+  console.log("partit de padel:", events3.map(e => e.summary));
 }
-test();
+
+testSearch().catch(console.error);

@@ -74,7 +74,17 @@ export function setupBot() {
 
   bot.onText(/\/start/, (msg) => {
     saveChatId(msg.chat.id);
-    bot.sendMessage(msg.chat.id, "Ei! 👋 Sóc el teu assistent personal. Parla'm com si fos un amic:\n\n📅 <i>'Afegeix una reunió demà a les 10'</i>\n🗑️ <i>'Cancel·la lo del pàdel del dimarts'</i>\n📧 <i>'Tinc algun correu del Pere?'</i>\n☀️ <i>'Quin temps farà demà?'</i>\n🎙️ <i>O envia'm una nota de veu, que també entenc!</i>\n\nEscriu /avui per veure el teu dia complet o /correus per un resum dels emails.", { parse_mode: 'HTML' });
+    const welcome = `Hola Edu! 👋 Sóc el teu assistent personal intel·ligent.
+
+Puc fer moltes coses per tu:
+📅 **Agenda:** Crear, esborrar o consultar esdeveniments.
+📧 **Gmail:** Resumir-te els correus del dia o buscar info específica.
+🧠 **Memòria:** Recordar coses que em diguis (prova: "Recorda que la clau és 1234").
+☁️ **Temps:** Dir-te quin temps farà a Balaguer.
+🎙️ **Veu:** Entenc les teves notes de veu!
+
+Escriu /avui per veure el teu dia o parla'm normal com un amic. Com et puc ajudar? 😊`;
+    bot.sendMessage(msg.chat.id, welcome, { parse_mode: 'Markdown' });
   });
 
   bot.onText(/\/correus/, async (msg) => {

@@ -60,13 +60,13 @@ Missatge de l'Edu: "${text || ''}"`;
 
   try {
     const model = ai.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-3.1-flash-lite',
       generationConfig: { responseMimeType: "application/json" }
     });
 
     const result = await model.generateContent({ contents: parts });
     const response = await result.response;
-    let rawJson = response.text();
+    const rawJson = response.text();
     if (rawJson.startsWith('\`\`\`json')) {
       rawJson = rawJson.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
     } else if (rawJson.startsWith('\`\`\`')) {
@@ -102,12 +102,10 @@ CORREUS:
 ${emailsText}`;
 
   try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
-        contents: prompt,
-        config: { temperature: 0.3 }
-    });
-    return response.text;
+    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error('Error resumint correus:', error);
     return "Ostres, m'he liat amb els correus. Torna-ho a provar!";
@@ -127,12 +125,10 @@ Si trobes el que busca, digues-ho clar. Si no, digues "No he vist res sobre aix�
 Català col·loquial, usa algun emoji, màxim 2-3 frases.`;
 
   try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
-        contents: prompt,
-        config: { temperature: 0.2 }
-    });
-    return response.text;
+    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error('Error responent consulta correus:', error);
     return "Ostres, m'he liat buscant els correus. Torna-ho a provar!";
@@ -161,12 +157,10 @@ Normes:
 - Màxim 5-6 línies en total. Breu però complet.`;
 
   try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
-        contents: prompt,
-        config: { temperature: 0.6 }
-    });
-    return response.text;
+    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error('Error generant salutació diària:', error);
     return `Ei Edu! Ha fallat el meu cervell digital però aquí tens el teu dia:\n${eventsText}\n\nTemps: ${weatherText}`;
@@ -183,12 +177,10 @@ Respon-li com li explicaries el temps a un amic en un WhatsApp. Breu, directe i 
 Digue-li si ha d'agafar jaqueta, paraigua, o si pot anar en màniga curta. Català i emojis.`;
 
   try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
-        contents: prompt,
-        config: { temperature: 0.4 }
-    });
-    return response.text;
+    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error('Error generant resposta temps:', error);
     return `☁️ ${weatherText}`;

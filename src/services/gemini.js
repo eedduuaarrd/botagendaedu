@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config/env.js';
 
-let ai;
+export let ai;
 if (config.geminiApiKey) {
     ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 }

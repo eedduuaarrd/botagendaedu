@@ -1,12 +1,9 @@
-import { ai } from './gemini.js'; // Need to export ai from gemini.js or re-import
-import { GoogleGenAI } from '@google/genai';
-import { config } from '../config/env.js';
-
-const genAI = new GoogleGenAI({ apiKey: config.geminiApiKey });
+import { ai } from './gemini.js';
 
 export class AIEditorService {
   static async applyChanges(currentContent, instructions) {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    if (!ai) throw new Error("Gemini API key is not configured");
+    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `Ets un expert en programació. Aquí tens el contingut actual d'un fitxer:
 

@@ -6,7 +6,26 @@ if (config.geminiApiKey) {
     ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 }
 
-const MODEL = 'gemini-3.1-flash-lite-preview';
+const MODELS = ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+
+async function callGemini(prompt, config = {}) {
+  for (const model of MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: { temperature: 0.3, ...config }
+      });
+      return response.text;
+    } catch (error) {
+      const code = error?.message?.match(/"code":(\d+)/)?.[1];
+      console.log(`Model ${model} failed (code ${code}), trying next...`);
+      if (code === '429' || code === '503') continue;
+      throw error;
+    }
+  }
+  throw new Error('All Gemini models failed');
+}
 
 export async function parseNaturalLanguage(text, currentDateString, historyStr = "", audioData = null) {
   if (!ai) throw new Error("Gemini API key is not configured");
@@ -64,26 +83,15 @@ Missatge de l'Edu: "${text || ''}"`;
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: contents,
-      config: {
-        temperature: 0.1,
-        responseMimeType: 'application/json'
-      }
+    const rawJson = await callGemini(contents, {
+      temperature: 0.1,
+      responseMimeType: 'application/json'
     });
 
-    console.log('Gemini raw response:', response.text);
-    return JSON.parse(response.text);
+    console.log('Gemini raw response:', rawJson);
+    return JSON.parse(rawJson);
   } catch (error) {
-    console.error('Error cridant a Gemini:', error);
-    if (error.status === 429) {
-      return { 
-        intent: 'general_chat', 
-        confidence: 1, 
-        reply_message: 'Ei, estic una mica saturat ara mateix! 😅 Dona\'m 30 segonets i torna a intentar-ho, va!' 
-      };
-    }
+    console.error('Error cridant a Gemini:', error?.message || error);
     return null;
   }
 }
@@ -106,12 +114,7 @@ CORREUS:
 ${truncatedEmails}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: { temperature: 0.3 }
-    });
-    return response.text;
+    return await callGemini(prompt, { temperature: 0.3 });
   } catch (error) {
     console.error('Error resumint correus:', error?.message || error);
     return "Ostres, no he pogut resumir els correus. Pot ser un tema de quota de la IA.";
@@ -131,12 +134,7 @@ Si trobes el que busca, digues-ho clar. Si no, digues "No he vist res sobre aix�
 Català col·loquial, usa algun emoji, màxim 2-3 frases.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: { temperature: 0.2 }
-    });
-    return response.text;
+    return await callGemini(prompt, { temperature: 0.2 });
   } catch (error) {
     console.error('Error responent consulta correus:', error?.message || error);
     return "Ostres, no he pogut analitzar els correus. Pot ser un tema de quota.";
@@ -165,14 +163,9 @@ Normes:
 - Màxim 5-6 línies en total. Breu però complet.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: { temperature: 0.6 }
-    });
-    return response.text;
+    return await callGemini(prompt, { temperature: 0.6 });
   } catch (error) {
-    console.error('Error generant salutació diària:', error);
+    console.error('Error generant salutació diària:', error?.message || error);
     return `Ei Edu! Ha fallat el meu cervell digital però aquí tens el teu dia:\n${eventsText}\n\nTemps: ${weatherText}`;
   }
 }
@@ -187,14 +180,9 @@ Respon-li com li explicaries el temps a un amic en un WhatsApp. Breu, directe i 
 Digue-li si ha d'agafar jaqueta, paraigua, o si pot anar en màniga curta. Català i emojis.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: { temperature: 0.4 }
-    });
-    return response.text;
+    return await callGemini(prompt, { temperature: 0.4 });
   } catch (error) {
-    console.error('Error generant resposta temps:', error);
+    console.error('Error generant resposta temps:', error?.message || error);
     return `☁️ ${weatherText}`;
   }
 }

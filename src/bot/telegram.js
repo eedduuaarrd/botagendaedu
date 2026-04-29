@@ -114,6 +114,17 @@ Què vols fer avui? 😊`;
     await sendDailyBriefing(chatId);
   });
 
+  bot.onText(/\/app/, (msg) => {
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${config.port}`;
+    bot.sendMessage(msg.chat.id, "Aquí tens la teva agenda visual: 📱", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🚀 Obrir l'App", web_app: { url: baseUrl } }]
+        ]
+      }
+    });
+  });
+
   bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text || '';

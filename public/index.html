@@ -2,27 +2,27 @@
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edu Agenda - TMA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Edu Agenda - Premium TMA</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="dark-mode">
+<body>
     <div id="app">
         <header>
             <div class="user-info">
-                <img id="user-photo" src="https://via.placeholder.com/40" alt="Avatar">
+                <img id="user-photo" src="https://via.placeholder.com/100" alt="Avatar">
                 <div>
-                    <h1 id="greeting">Hola, Edu!</h1>
-                    <p id="date-display">Dimecres, 29 d'abril</p>
+                    <h1 id="greeting">Hola!</h1>
+                    <p id="date-display">Carregant data...</p>
                 </div>
             </div>
             <div class="status-badge" id="weather-badge">
-                <span id="temp-val">25°C</span>
-                <span id="weather-icon">☀️</span>
+                <span id="temp-val">--°</span>
+                <span id="weather-icon">--</span>
             </div>
         </header>
 
@@ -30,28 +30,39 @@
             <section class="card glass" id="daily-summary">
                 <h2>🌅 Resum del dia</h2>
                 <div id="summary-content">
-                    <p class="loading">Carregant resum...</p>
+                    <div class="loading">
+                        <div class="skeleton" style="height: 20px; width: 100%;"></div>
+                        <div class="skeleton" style="height: 20px; width: 90%;"></div>
+                        <div class="skeleton" style="height: 20px; width: 95%;"></div>
+                    </div>
                 </div>
             </section>
 
-            <section class="card-grid">
-                <div class="card glass" id="agenda-card">
+            <div class="card-grid">
+                <section class="card glass" id="agenda-card">
                     <div class="card-header">
                         <h2>📅 Agenda</h2>
                         <button class="btn-icon" id="add-event-btn">+</button>
                     </div>
                     <ul id="event-list">
-                        <li class="loading">Buscant events...</li>
+                        <li class="loading">
+                            <div class="skeleton" style="height: 40px; margin-bottom: 10px;"></div>
+                            <div class="skeleton" style="height: 40px; margin-bottom: 10px;"></div>
+                            <div class="skeleton" style="height: 40px;"></div>
+                        </li>
                     </ul>
-                </div>
+                </section>
 
-                <div class="card glass" id="mail-card">
-                    <h2>📧 Correus</h2>
+                <section class="card glass" id="mail-card">
+                    <h2>📧 Correus Recents</h2>
                     <div id="mail-summary">
-                        <p class="loading">Llegint correus...</p>
+                        <div class="loading">
+                            <div class="skeleton" style="height: 15px; width: 100%; margin-bottom: 8px;"></div>
+                            <div class="skeleton" style="height: 15px; width: 85%;"></div>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
         </main>
 
         <nav class="bottom-nav">
@@ -61,11 +72,15 @@
             </button>
             <button class="nav-item" data-tab="calendar">
                 <span class="icon">🗓️</span>
-                <span>Calendari</span>
+                <span>Agenda</span>
             </button>
             <button class="nav-item" data-tab="ai">
                 <span class="icon">🧠</span>
-                <span>IA Chat</span>
+                <span>Asistent</span>
+            </button>
+            <button class="nav-item" data-tab="settings">
+                <span class="icon">⚙️</span>
+                <span>Ajustos</span>
             </button>
         </nav>
     </div>

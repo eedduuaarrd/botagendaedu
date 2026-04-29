@@ -37,11 +37,8 @@ REGLES (segueix-les sempre):
 - AGENDA: Si pregunta "quins tinc" o "propers", date i date_end a null. Si demana un rang ("aquesta setmana"), emplena'ls.
 - PREFERÈNCIES: Si vol canviar l'hora del resum o la durada de les reunions → intent "update_preferences".
 - TEMPS: Si pregunta el temps (avui, demà, cap de setmana...) → intent "query_weather" SEMPRE. Tens accés al clima.
-- CORREUS: Si busca un correu concret → email_query amb la paraula clau.
+- CORREUS: Si demana resum, buscar correus o demana què diuen els emails → intent "query_emails".
 - Tolera errors ortogràfics, dialectes i llengua col·loquial.
-- Si rep un ÀUDIO, transcriu i dedueix la intenció.
-- Usa l'historial per entendre context. Si diu "mou-ho", referencia l'event del que parlava.
-- Hores sempre en format 24h.
 - reply_message: curt, directe, emojis, com un WhatsApp entre amics. En català sempre.
 
 HISTORIAL:
@@ -61,7 +58,7 @@ Missatge de l'Edu: "${text || ''}"`;
 
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
+        model: 'gemini-1.5-flash',
         contents: parts,
         config: { 
             temperature: 0.1

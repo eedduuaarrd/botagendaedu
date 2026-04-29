@@ -12,12 +12,13 @@
 </head>
 <body>
     <div id="app">
+        <!-- HEADER -->
         <header>
             <div class="user-info">
                 <img id="user-photo" src="https://via.placeholder.com/100" alt="Avatar">
                 <div>
                     <h1 id="greeting">Hola!</h1>
-                    <p id="date-display">Carregant data...</p>
+                    <p id="date-display">Carregant dades...</p>
                 </div>
             </div>
             <div class="status-badge" id="weather-badge">
@@ -26,45 +27,84 @@
             </div>
         </header>
 
+        <!-- TAB CONTENTS -->
         <main>
-            <section class="card glass" id="daily-summary">
-                <h2>🌅 Resum del dia</h2>
-                <div id="summary-content">
-                    <div class="loading">
-                        <div class="skeleton" style="height: 20px; width: 100%;"></div>
-                        <div class="skeleton" style="height: 20px; width: 90%;"></div>
-                        <div class="skeleton" style="height: 20px; width: 95%;"></div>
+            <!-- TAB: HOME -->
+            <section id="tab-home" class="tab-content active">
+                <section class="card glass" id="daily-summary">
+                    <h2>🌅 Resum del dia</h2>
+                    <div id="summary-content">
+                        <div class="loading">
+                            <div class="skeleton" style="height: 20px; width: 100%;"></div>
+                            <div class="skeleton" style="height: 20px; width: 90%;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="card-grid">
+                    <section class="card glass" id="agenda-preview">
+                        <div class="card-header">
+                            <h2>📅 Avui</h2>
+                            <button class="btn-icon add-btn">+</button>
+                        </div>
+                        <ul id="preview-list"></ul>
+                    </section>
+
+                    <section class="card glass" id="mail-preview">
+                        <h2>📧 Correus Recents</h2>
+                        <div id="mail-content-preview">
+                            <div class="loading"><div class="skeleton" style="height: 40px;"></div></div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- TAB: CALENDAR -->
+            <section id="tab-calendar" class="tab-content">
+                <div class="card-header">
+                    <h2 class="title-large">La Teva Agenda</h2>
+                    <button class="btn-icon add-btn">+</button>
+                </div>
+                <div id="full-agenda-list"></div>
+            </section>
+
+            <!-- TAB: AI CHAT -->
+            <section id="tab-ai" class="tab-content">
+                <h2 class="title-large">Assistent d'IA</h2>
+                <div id="chat-container" class="glass">
+                    <div id="chat-messages">
+                        <div class="msg bot">Hola! Com et puc ajudar avui? 😊</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Escriu aquí...">
+                        <button id="send-msg">🚀</button>
                     </div>
                 </div>
             </section>
 
-            <div class="card-grid">
-                <section class="card glass" id="agenda-card">
-                    <div class="card-header">
-                        <h2>📅 Agenda</h2>
-                        <button class="btn-icon" id="add-event-btn">+</button>
+            <!-- TAB: SETTINGS -->
+            <section id="tab-settings" class="tab-content">
+                <h2 class="title-large">Ajustos</h2>
+                <div class="card glass">
+                    <div class="setting-item">
+                        <label>Hora del resum matinal</label>
+                        <input type="time" id="pref-summary-time">
                     </div>
-                    <ul id="event-list">
-                        <li class="loading">
-                            <div class="skeleton" style="height: 40px; margin-bottom: 10px;"></div>
-                            <div class="skeleton" style="height: 40px; margin-bottom: 10px;"></div>
-                            <div class="skeleton" style="height: 40px;"></div>
-                        </li>
-                    </ul>
-                </section>
-
-                <section class="card glass" id="mail-card">
-                    <h2>📧 Correus Recents</h2>
-                    <div id="mail-summary">
-                        <div class="loading">
-                            <div class="skeleton" style="height: 15px; width: 100%; margin-bottom: 8px;"></div>
-                            <div class="skeleton" style="height: 15px; width: 85%;"></div>
-                        </div>
+                    <div class="setting-item">
+                        <label>Durada per defecte (min)</label>
+                        <input type="number" id="pref-duration" min="15" max="480" step="15">
                     </div>
-                </section>
-            </div>
+                    <button id="save-prefs" class="btn-primary">Guardar Canvis</button>
+                </div>
+                
+                <div class="card glass secondary">
+                    <p style="font-size: 0.8rem; opacity: 0.6; text-align: center;">Vols desconnectar el Google Calendar?</p>
+                    <button id="reauth-btn" class="btn-secondary">Tornar a Autoritzar</button>
+                </div>
+            </section>
         </main>
 
+        <!-- NAVIGATION -->
         <nav class="bottom-nav">
             <button class="nav-item active" data-tab="home">
                 <span class="icon">🏠</span>
@@ -76,7 +116,7 @@
             </button>
             <button class="nav-item" data-tab="ai">
                 <span class="icon">🧠</span>
-                <span>Asistent</span>
+                <span>Assistent</span>
             </button>
             <button class="nav-item" data-tab="settings">
                 <span class="icon">⚙️</span>
@@ -85,14 +125,27 @@
         </nav>
     </div>
 
-    <!-- Modal per afegir event (opcional per ara) -->
-    <div id="modal" class="modal hidden">
+    <!-- MODAL: ADD EVENT -->
+    <div id="event-modal" class="modal hidden">
         <div class="modal-content glass">
             <h3>Nou Esdeveniment</h3>
-            <input type="text" placeholder="Què vols fer?">
+            <div class="form-group">
+                <label>Títol</label>
+                <input type="text" id="ev-title" placeholder="Reunió de treball...">
+            </div>
+            <div class="form-group-row">
+                <div>
+                    <label>Data</label>
+                    <input type="date" id="ev-date">
+                </div>
+                <div>
+                    <label>Hora</label>
+                    <input type="time" id="ev-time">
+                </div>
+            </div>
             <div class="modal-actions">
-                <button id="close-modal">Cancel·la</button>
-                <button id="save-event" class="btn-primary">Guarda</button>
+                <button id="close-modal" class="btn-text">Cancel·la</button>
+                <button id="submit-event" class="btn-primary">Crea Event</button>
             </div>
         </div>
     </div>

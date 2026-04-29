@@ -1,0 +1,12 @@
+{
+  "balance": -10,
+  "transactions": [
+    {
+      "id": 1777501328524,
+      "amount": 10,
+      "note": "DESPESA MANUAL",
+      "type": "expense",
+      "date": "2026-04-29T22:22:08.524Z"
+    }
+  ]
+}

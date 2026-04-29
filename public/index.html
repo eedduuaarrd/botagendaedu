@@ -2,8 +2,8 @@
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Executive OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Executive OS | Celestial</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,127 +16,141 @@
         <header>
             <div class="profile-section">
                 <h1 id="greeting">Hola Edu</h1>
-                <p id="date-display">CARREGANT SISTEMA...</p>
+                <p id="date-display">SISTEMA OPERATIU ACTIU</p>
             </div>
             <div class="status-indicator">
-                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success);"></div>
+                <div class="status-dot"></div>
             </div>
         </header>
 
-        <!-- VIEWS -->
+        <!-- MAIN VIEWS -->
         <main>
-            <!-- TAB: DASHBOARD -->
-            <section id="view-home" class="tab-view active">
+            <!-- DASHBOARD -->
+            <section id="view-home" class="view-layer active">
                 <div class="dashboard-grid">
-                    <!-- Weather Widget -->
+                    <!-- Weather -->
                     <div class="widget widget-full">
-                        <div class="widget-title"><i data-lucide="cloud-sun"></i> Clima & Previsió</div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div class="widget-title"><i data-lucide="cloud"></i> Atosfera Actual</div>
+                        <div class="weather-main">
                             <div>
                                 <span class="balance-val" id="temp-val">--°</span>
-                                <p id="weather-desc" style="font-size: 0.8rem; color: var(--text-muted);">Actualitzant...</p>
+                                <p id="weather-desc" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">CARREGANT...</p>
                             </div>
-                            <div style="width: 100px; height: 40px;">
+                            <div class="chart-container">
                                 <canvas id="weather-mini-chart"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Finance Widget -->
+                    <!-- Finance -->
                     <div class="widget" id="open-finance">
-                        <div class="widget-title"><i data-lucide="wallet"></i> Finançes</div>
-                        <span class="balance-val" id="balance-display">0€</span>
-                        <p style="font-size: 0.7rem; color: var(--success);">+0% aquest mes</p>
-                    </div>
-
-                    <!-- Habits Widget -->
-                    <div class="widget" id="open-habits">
-                        <div class="widget-title"><i data-lucide="check-circle"></i> Hàbits</div>
-                        <div id="habits-preview" style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
-                            <p style="font-size: 0.8rem; opacity: 0.5;">Sense hàbits actius</p>
+                        <div class="widget-title"><i data-lucide="compass"></i> Actius</div>
+                        <div class="balance-container">
+                            <span class="balance-val" id="balance-display">0€</span>
+                            <span class="balance-trend">+0.0%</span>
                         </div>
                     </div>
 
-                    <!-- Briefing Widget -->
+                    <!-- Habits -->
+                    <div class="widget" id="open-habits">
+                        <div class="widget-title"><i data-lucide="activity"></i> Habits</div>
+                        <div id="habits-preview" class="habit-list">
+                            <p style="font-size: 0.75rem; opacity: 0.3;">Sincronitzant...</p>
+                        </div>
+                    </div>
+
+                    <!-- Briefing -->
                     <div class="widget widget-full">
-                        <div class="widget-title"><i data-lucide="zap"></i> Briefing Executiu</div>
-                        <div id="summary-content" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-main);">
+                        <div class="widget-title"><i data-lucide="command"></i> Briefing Executiu</div>
+                        <div id="summary-content" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);">
                             Generant informe de situació...
                         </div>
                     </div>
                 </div>
 
-                <div class="section-title"><i data-lucide="calendar"></i> Propers Esdeveniments</div>
-                <div class="list-container" id="preview-list"></div>
+                <div class="section-header">
+                    <div class="section-title"><i data-lucide="calendar"></i> Pròxims</div>
+                </div>
+                <div id="preview-list"></div>
             </section>
 
-            <!-- TAB: AGENDA -->
-            <section id="view-calendar" class="tab-view">
-                <div class="section-title"><i data-lucide="clock"></i> Línia de Temps</div>
-                <div id="full-agenda-list" class="list-container"></div>
+            <!-- AGENDA -->
+            <section id="view-calendar" class="view-layer">
+                <div class="section-header">
+                    <div class="section-title"><i data-lucide="layers"></i> Línia de Temps</div>
+                </div>
+                <div id="full-agenda-list"></div>
             </section>
 
-            <!-- TAB: INTELLIGENCE -->
-            <section id="view-ai" class="tab-view">
-                <div class="section-title"><i data-lucide="bot"></i> Intel·ligència Artificial</div>
-                <div id="chat-messages" style="height: 55vh; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px;"></div>
-                <div style="position: sticky; bottom: 0; background: var(--bg-primary); padding-top: 10px;">
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="chat-input" class="input-field" placeholder="Consulta el sistema..." style="margin-bottom: 0;">
-                        <button id="send-msg" class="btn-primary" style="width: 60px; padding: 0;"><i data-lucide="send"></i></button>
+            <!-- INTELLIGENCE -->
+            <section id="view-ai" class="view-layer">
+                <div class="section-header">
+                    <div class="section-title"><i data-lucide="sparkles"></i> Intel·ligència</div>
+                </div>
+                <div id="chat-messages" class="chat-window"></div>
+                <div style="margin-top: 20px;">
+                    <div class="input-group">
+                        <input type="text" id="chat-input" class="input-modern" placeholder="Demana qualsevol cosa...">
+                        <button id="send-msg" class="btn-icon"><i data-lucide="arrow-up"></i></button>
                     </div>
-                    <div style="display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px;">
-                        <button class="btn-secondary" style="font-size: 0.7rem; padding: 8px 12px; width: auto;" onclick="quickAi('Resum de correus')">Emails</button>
-                        <button class="btn-secondary" style="font-size: 0.7rem; padding: 8px 12px; width: auto;" onclick="quickAi('Estat de l\'agenda')">Agenda</button>
-                        <button class="btn-secondary" style="font-size: 0.7rem; padding: 8px 12px; width: auto;" onclick="quickAi('Analitza finançes')">Finançes</button>
+                    <div style="display: flex; gap: 8px; margin-top: 15px; overflow-x: auto; padding-bottom: 10px;">
+                        <button class="nav-btn" style="background: rgba(255,255,255,0.05); padding: 10px 15px;" onclick="quickAi('Resum emails')"><span>Emails</span></button>
+                        <button class="nav-btn" style="background: rgba(255,255,255,0.05); padding: 10px 15px;" onclick="quickAi('Estat agenda')"><span>Agenda</span></button>
+                        <button class="nav-btn" style="background: rgba(255,255,255,0.05); padding: 10px 15px;" onclick="quickAi('Anàlisi diners')"><span>Actius</span></button>
                     </div>
                 </div>
             </section>
 
-            <!-- TAB: VAULT (Finance & Stats) -->
-            <section id="view-vault" class="tab-view">
-                <div class="section-title"><i data-lucide="database"></i> El Vault</div>
+            <!-- VAULT -->
+            <section id="view-vault" class="view-layer">
+                <div class="section-header">
+                    <div class="section-title"><i data-lucide="database"></i> El Vault</div>
+                </div>
                 <div class="widget widget-full">
-                    <div class="widget-title">Historial de Transaccions</div>
-                    <div id="finance-history" class="list-container" style="max-height: 200px; overflow-y: auto;"></div>
-                    <div class="mt-4" style="display: flex; gap: 10px; margin-top: 15px;">
-                        <input type="number" id="finance-amount" class="input-field" placeholder="0.00" style="margin-bottom: 0;">
-                        <button id="add-expense" class="btn-primary" style="width: auto; padding: 0 20px;">Afegir</button>
+                    <div class="widget-title">Transaccions</div>
+                    <div id="finance-history" style="max-height: 250px; overflow-y: auto;"></div>
+                    <div class="input-group" style="margin-top: 20px;">
+                        <input type="number" id="finance-amount" class="input-modern" placeholder="0.00">
+                        <button id="add-expense" class="btn-icon"><i data-lucide="plus"></i></button>
                     </div>
                 </div>
-                
+
                 <div class="widget widget-full" style="margin-top: 20px;">
-                    <div class="widget-title">Emails de la darrera sessió</div>
-                    <div id="email-list-container" class="list-container"></div>
+                    <div class="widget-title">Logs de Comunicació</div>
+                    <div id="email-list-container"></div>
                 </div>
             </section>
         </main>
 
         <!-- NAVIGATION -->
-        <nav class="bottom-nav">
-            <button class="nav-item active" data-view="home"><i data-lucide="layout-grid"></i><span>Inici</span></button>
-            <button class="nav-item" data-view="calendar"><i data-lucide="calendar"></i><span>Agenda</span></button>
-            <button class="nav-item" data-view="ai"><i data-lucide="sparkles"></i><span>IA</span></button>
-            <button class="nav-item" data-view="vault"><i data-lucide="shield"></i><span>Vault</span></button>
+        <nav class="nav-bar">
+            <button class="nav-btn active" data-view="home"><i data-lucide="home"></i><span>Inici</span></button>
+            <button class="nav-btn" data-view="calendar"><i data-lucide="calendar"></i><span>Agenda</span></button>
+            <button class="nav-btn" data-view="ai"><i data-lucide="zap"></i><span>IA</span></button>
+            <button class="nav-btn" data-view="vault"><i data-lucide="shield"></i><span>Vault</span></button>
         </nav>
     </div>
 
     <!-- MODAL: ADD EVENT -->
-    <div id="event-modal" class="modal-overlay hidden">
-        <div class="modal-sheet">
-            <h2 style="margin-bottom: 20px; font-weight: 800;">Nou Esdeveniment</h2>
-            <input type="text" id="ev-title" class="input-field" placeholder="Títol de l'esdeveniment">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <input type="date" id="ev-date" class="input-field">
-                <input type="time" id="ev-time" class="input-field">
+    <div id="event-modal" class="modal-mask hidden">
+        <div class="modal-surface">
+            <div class="section-title" style="margin-bottom: 25px; font-size: 1.2rem;">Nou Esdeveniment</div>
+            <div class="input-group" style="margin-bottom: 15px;">
+                <input type="text" id="ev-title" class="input-modern" placeholder="Títol">
             </div>
-            <button id="submit-event" class="btn-primary" style="margin-top: 10px;">Sincronitzar</button>
-            <button id="close-modal" class="btn-secondary" style="margin-top: 10px;">Cancel·lar</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group"><input type="date" id="ev-date" class="input-modern"></div>
+                <div class="input-group"><input type="time" id="ev-time" class="input-modern"></div>
+            </div>
+            <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 12px;">
+                <button id="submit-event" class="btn-icon" style="width: 100%; border-radius: 16px; font-weight: 700;">CONFIRMAR</button>
+                <button id="close-modal" style="background: none; border: none; color: var(--text-dim); font-size: 0.8rem; font-weight: 700; padding: 10px;">CANCEL·LAR</button>
+            </div>
         </div>
     </div>
 
     <!-- FAB -->
-    <button class="fab" id="open-modal-btn" style="position: fixed; bottom: 100px; right: 25px; background: white; color: black; border: none; width: 56px; height: 56px; border-radius: 28px; font-size: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); cursor: pointer; z-index: 900;">
+    <button class="fab-main" id="open-modal-btn">
         <i data-lucide="plus"></i>
     </button>
 

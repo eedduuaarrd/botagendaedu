@@ -59,15 +59,14 @@ Missatge de l'Edu: "${text || ''}"`;
   }
 
   try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: parts,
-        config: { 
-            temperature: 0.1
-        }
+    const model = ai.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      generationConfig: { responseMimeType: "application/json" }
     });
 
-    let rawJson = response.text;
+    const result = await model.generateContent({ contents: parts });
+    const response = await result.response;
+    let rawJson = response.text();
     if (rawJson.startsWith('\`\`\`json')) {
       rawJson = rawJson.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
     } else if (rawJson.startsWith('\`\`\`')) {

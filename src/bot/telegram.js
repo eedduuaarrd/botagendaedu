@@ -76,19 +76,21 @@ export function setupBot() {
     saveChatId(msg.chat.id);
     const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${config.port}`;
     
-    const welcome = `Hola Edu! 👋 Sóc el teu assistent personal de **Premium**.
+    const welcome = `✨ **Benvingut a l'Ecosistema Cyber-Premium** ✨
 
-He preparat una experiència completa per a tu. Pots parlar-me normalment o obrir la meva **App de Telegram** per veure-ho tot més clar.
+Hola Edu! He elevat la teva gestió personal a un nou nivell. Sóc el teu assistent de nova generació, dissenyat per oferir-te el màxim rendiment amb una estètica futurista.
 
-Què vols fer avui? 😊`;
+Pots interactuar amb mi aquí mateix o obrir la **Cyber-App** per a una experiència visual immersiva.
+
+Què vols optimitzar avui? 🚀`;
 
     bot.sendMessage(msg.chat.id, welcome, { 
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: "🚀 Obrir l'App de l'Agenda", web_app: { url: baseUrl } }],
-          [{ text: "📅 Veure Agenda d'avui", callback_data: 'query_today' }, { text: "📧 Resum correus", callback_data: 'query_mails' }],
-          [{ text: "☁️ Temps a Balaguer", callback_data: 'query_weather' }]
+          [{ text: "🌌 Entrar a la Cyber-App", web_app: { url: baseUrl } }],
+          [{ text: "📊 Status d'avui", callback_data: 'query_today' }, { text: "📧 Inbox Intelligence", callback_data: 'query_mails' }],
+          [{ text: "🌤️ Atmosfera Balaguer", callback_data: 'query_weather' }]
         ]
       }
     });

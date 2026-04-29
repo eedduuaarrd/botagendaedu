@@ -2,150 +2,180 @@
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Edu Agenda - Premium TMA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Edu Agenda - Cyber Premium</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.1.0/font/lucide.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Mesh Background -->
+    <div class="mesh-bg"></div>
+
     <div id="app">
         <!-- HEADER -->
         <header>
-            <div class="user-info">
-                <img id="user-photo" src="https://via.placeholder.com/100" alt="Avatar">
-                <div>
+            <div class="user-profile">
+                <div class="avatar-wrapper">
+                    <img id="user-photo" src="https://via.placeholder.com/150" alt="Avatar">
+                    <div class="status-dot"></div>
+                </div>
+                <div class="greeting-text">
                     <h1 id="greeting">Hola!</h1>
-                    <p id="date-display">Carregant dades...</p>
+                    <p id="date-display">Actualitzant...</p>
                 </div>
             </div>
-            <div class="status-badge" id="weather-badge">
-                <span id="temp-val">--°</span>
-                <span id="weather-icon">--</span>
-            </div>
+            <button class="btn-circle" id="search-toggle">
+                <i class="lucide-search"></i>
+            </button>
         </header>
+
+        <!-- SEARCH BAR (HIDDEN BY DEFAULT) -->
+        <div id="search-area" class="glass-card hidden" style="margin-bottom: 20px; padding: 12px 18px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="lucide-search" style="color: var(--text-secondary);"></i>
+                <input type="text" id="global-search" placeholder="Busca esdeveniments..." style="background: none; border: none; color: white; flex: 1; outline: none;">
+            </div>
+        </div>
 
         <!-- TAB CONTENTS -->
         <main>
             <!-- TAB: HOME -->
             <section id="tab-home" class="tab-content active">
-                <section class="card glass" id="daily-summary">
-                    <h2>🌅 Resum del dia</h2>
-                    <div id="summary-content">
-                        <div class="loading">
-                            <div class="skeleton" style="height: 20px; width: 100%;"></div>
-                            <div class="skeleton" style="height: 20px; width: 90%;"></div>
+                <!-- Weather Widget -->
+                <div class="weather-widget">
+                    <div>
+                        <span class="temp-main" id="temp-val">--°</span>
+                        <div class="weather-stats">
+                            <span><i class="lucide-droplets"></i> <span id="humidity">--</span>%</span>
+                            <span><i class="lucide-wind"></i> <span id="wind">--</span> km/h</span>
                         </div>
                     </div>
-                </section>
+                    <div class="weather-info">
+                        <i id="weather-icon-large" style="font-size: 2.5rem; margin-bottom: 8px; display: block;">☀️</i>
+                        <span id="weather-desc">Cargant...</span>
+                    </div>
+                </div>
 
-                <div class="card-grid">
-                    <section class="card glass" id="agenda-preview">
-                        <div class="card-header">
-                            <h2>📅 Avui</h2>
-                            <button class="btn-icon add-btn">+</button>
-                        </div>
-                        <ul id="preview-list"></ul>
-                    </section>
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-val" id="stat-total">0</span>
+                        <span class="stat-label">Events / 7d</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-val" id="stat-work">0</span>
+                        <span class="stat-label">Work / 7d</span>
+                    </div>
+                </div>
 
-                    <section class="card glass" id="mail-preview">
-                        <h2>📧 Correus Recents</h2>
-                        <div id="mail-content-preview">
-                            <div class="loading"><div class="skeleton" style="height: 40px;"></div></div>
-                        </div>
-                    </section>
+                <h2 class="card-section-title"><i class="lucide-zap"></i> Quick Summary</h2>
+                <div class="glass-card" id="summary-content">
+                    <div class="loading"><div class="skeleton" style="height: 60px;"></div></div>
+                </div>
+
+                <h2 class="card-section-title"><i class="lucide-calendar"></i> Next Events</h2>
+                <div class="glass-card">
+                    <div id="preview-list"></div>
                 </div>
             </section>
 
             <!-- TAB: CALENDAR -->
             <section id="tab-calendar" class="tab-content">
-                <div class="card-header">
-                    <h2 class="title-large">La Teva Agenda</h2>
-                    <button class="btn-icon add-btn">+</button>
-                </div>
+                <h2 class="title-large">Your Timeline</h2>
                 <div id="full-agenda-list"></div>
             </section>
 
             <!-- TAB: AI CHAT -->
             <section id="tab-ai" class="tab-content">
-                <h2 class="title-large">Assistent d'IA</h2>
-                <div id="chat-container" class="glass">
-                    <div id="chat-messages">
-                        <div class="msg bot">Hola! Com et puc ajudar avui? 😊</div>
-                    </div>
+                <h2 class="title-large">Assistant</h2>
+                <div id="chat-container">
+                    <div id="chat-messages"></div>
                     <div class="chat-input-area">
-                        <input type="text" id="chat-input" placeholder="Escriu aquí...">
-                        <button id="send-msg">🚀</button>
+                        <input type="text" id="chat-input" placeholder="Ask anything...">
+                        <button id="record-voice" class="btn-circle" style="background: rgba(255,255,255,0.1); color: white;">
+                            <i class="lucide-mic"></i>
+                        </button>
+                        <button id="send-msg" class="btn-circle">
+                            <i class="lucide-send"></i>
+                        </button>
                     </div>
                 </div>
             </section>
 
             <!-- TAB: SETTINGS -->
             <section id="tab-settings" class="tab-content">
-                <h2 class="title-large">Ajustos</h2>
-                <div class="card glass">
+                <h2 class="title-large">System</h2>
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 20px; font-size: 1rem;">Preferences</h3>
                     <div class="setting-item">
-                        <label>Hora del resum matinal</label>
+                        <label>Summary Time</label>
                         <input type="time" id="pref-summary-time">
                     </div>
                     <div class="setting-item">
-                        <label>Durada per defecte (min)</label>
-                        <input type="number" id="pref-duration" min="15" max="480" step="15">
+                        <label>Default Duration (min)</label>
+                        <input type="number" id="pref-duration">
                     </div>
-                    <button id="save-prefs" class="btn-primary">Guardar Canvis</button>
+                    <button id="save-prefs" class="btn-primary">Sync Preferences</button>
                 </div>
                 
-                <div class="card glass secondary">
-                    <p style="font-size: 0.8rem; opacity: 0.6; text-align: center;">Vols desconnectar el Google Calendar?</p>
-                    <button id="reauth-btn" class="btn-secondary">Tornar a Autoritzar</button>
+                <div class="glass-card" style="border-color: rgba(255, 77, 77, 0.2);">
+                    <h3 style="margin-bottom: 12px; font-size: 1rem; color: var(--danger);">Danger Zone</h3>
+                    <button id="reauth-btn" class="btn-secondary" style="color: var(--danger);">Reset Auth</button>
                 </div>
             </section>
         </main>
 
-        <!-- NAVIGATION -->
-        <nav class="bottom-nav">
+        <!-- FLOATING NAV -->
+        <nav class="nav-floating">
             <button class="nav-item active" data-tab="home">
-                <span class="icon">🏠</span>
-                <span>Inici</span>
+                <i class="lucide-home"></i>
+                <span>Home</span>
             </button>
             <button class="nav-item" data-tab="calendar">
-                <span class="icon">🗓️</span>
-                <span>Agenda</span>
+                <i class="lucide-calendar-days"></i>
+                <span>Plan</span>
             </button>
             <button class="nav-item" data-tab="ai">
-                <span class="icon">🧠</span>
-                <span>Assistent</span>
+                <i class="lucide-sparkles"></i>
+                <span>AI</span>
             </button>
             <button class="nav-item" data-tab="settings">
-                <span class="icon">⚙️</span>
-                <span>Ajustos</span>
+                <i class="lucide-sliders"></i>
+                <span>Setup</span>
             </button>
         </nav>
     </div>
 
-    <!-- MODAL: ADD EVENT -->
+    <!-- FAB -->
+    <button class="btn-circle add-btn" style="position: fixed; bottom: 100px; right: 25px; width: 60px; height: 60px; z-index: 999; font-size: 1.8rem;">
+        <i class="lucide-plus"></i>
+    </button>
+
+    <!-- MODAL -->
     <div id="event-modal" class="modal hidden">
-        <div class="modal-content glass">
-            <h3>Nou Esdeveniment</h3>
+        <div class="modal-content glass-card" style="background: rgba(15,17,26,0.95); backdrop-filter: blur(40px);">
+            <h3 style="margin-bottom: 24px; font-size: 1.4rem;">New Event</h3>
             <div class="form-group">
-                <label>Títol</label>
-                <input type="text" id="ev-title" placeholder="Reunió de treball...">
+                <label>Title</label>
+                <input type="text" id="ev-title" placeholder="Meeting with...">
             </div>
             <div class="form-group-row">
                 <div>
-                    <label>Data</label>
+                    <label>Date</label>
                     <input type="date" id="ev-date">
                 </div>
                 <div>
-                    <label>Hora</label>
+                    <label>Time</label>
                     <input type="time" id="ev-time">
                 </div>
             </div>
             <div class="modal-actions">
-                <button id="close-modal" class="btn-text">Cancel·la</button>
-                <button id="submit-event" class="btn-primary">Crea Event</button>
+                <button id="close-modal" class="btn-text">Cancel</button>
+                <button id="submit-event" class="btn-primary">Schedule</button>
             </div>
         </div>
     </div>

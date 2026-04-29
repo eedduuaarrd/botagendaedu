@@ -5,12 +5,12 @@ tg.enableClosingConfirmation();
 // -- STATE --
 let currentTab = 'home';
 let events = [];
+let stats = null;
 let chatHistory = "Bot: Hola! Com et puc ajudar avui? 😊\n";
+let isRecording = false;
 
 // -- THEME --
-document.body.style.setProperty('--bg-color', tg.themeParams.bg_color || '#0d0f17');
-document.body.style.setProperty('--text-primary', tg.themeParams.text_color || '#ffffff');
-document.body.style.setProperty('--accent-primary', tg.themeParams.button_color || '#8b5cf6');
+document.body.style.setProperty('--accent-primary', tg.themeParams.button_color || '#a855f7');
 
 // -- INIT --
 const user = tg.initDataUnsafe?.user;
@@ -19,9 +19,14 @@ if (user) {
     if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
 }
 
-const dateOptions = { weekday: 'long', day: 'numeric', month: 'long' };
-const dateStr = new Date().toLocaleDateString('ca-ES', dateOptions);
-document.getElementById('date-display').innerText = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+function updateClock() {
+    const now = new Date();
+    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+    const dateStr = now.toLocaleDateString('ca-ES', options);
+    document.getElementById('date-display').innerText = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+}
+setInterval(updateClock, 1000);
+updateClock();
 
 // -- TAB NAVIGATION --
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -34,86 +39,98 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
 function switchTab(tab) {
     tg.HapticFeedback.selectionChanged();
-    
-    // UI Update
     document.querySelector('.nav-item.active').classList.remove('active');
     document.querySelector(`.nav-item[data-tab="${tab}"]`).classList.add('active');
-    
     document.querySelector('.tab-content.active').classList.remove('active');
     document.getElementById(`tab-${tab}`).classList.add('active');
-    
     currentTab = tab;
     
-    // Refresh data if needed
-    if (tab === 'calendar') loadFullAgenda();
     if (tab === 'home') loadHomeData();
+    if (tab === 'calendar') loadFullAgenda();
 }
 
-// -- DATA LOADING (HOME) --
+// -- DATA LOADING --
 async function loadHomeData() {
     try {
-        const [weatherRes, briefingRes, eventsRes] = await Promise.all([
-            fetch('/api/weather'),
+        const [weatherRes, briefingRes, eventsRes, statsRes] = await Promise.all([
+            fetch('/api/weather/detailed'),
             fetch('/api/briefing'),
-            fetch('/api/events?max=5')
+            fetch('/api/events?max=3'),
+            fetch('/api/stats')
         ]);
 
         const weather = await weatherRes.json();
         const briefing = await briefingRes.json();
         const homeEvents = await eventsRes.json();
+        stats = await statsRes.json();
 
-        // Render Weather
-        if (weather.text) {
-            const tempMatch = weather.text.match(/(\d+)ºC/) || weather.text.match(/(\d+)°/);
-            document.getElementById('temp-val').innerText = tempMatch ? `${tempMatch[1]}°` : '--°';
-            const iconSpan = document.getElementById('weather-icon');
-            const wText = weather.text.toLowerCase();
-            if (wText.includes('sol') || wText.includes('clar')) iconSpan.innerText = '☀️';
-            else if (wText.includes('núvol')) iconSpan.innerText = '⛅';
-            else if (wText.includes('pluja')) iconSpan.innerText = '🌧️';
-            else iconSpan.innerText = '🌡️';
-        }
+        renderWeather(weather);
+        renderStats(stats);
+        
+        document.getElementById('summary-content').innerHTML = `<p>${briefing.text?.replace(/\n/g, '<br>') || 'No summary today.'}</p>`;
 
-        // Render Briefing
-        document.getElementById('summary-content').innerHTML = `<p>${briefing.text?.replace(/\n/g, '<br>') || 'Sense dades.'}</p>`;
-
-        // Render Preview Agenda
         const list = document.getElementById('preview-list');
         list.innerHTML = '';
         if (homeEvents.length === 0) {
-            list.innerHTML = '<li class="loading">No tens res per avui! ✨</li>';
+            list.innerHTML = '<p style="opacity:0.5; font-size:0.9rem;">No upcoming events.</p>';
         } else {
             homeEvents.forEach(ev => {
-                const time = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', {hour:'2-digit', minute:'2-digit'}) : 'Tot el dia';
-                const li = document.createElement('li');
-                li.className = 'event-item';
-                li.innerHTML = `<span class="event-time">${time}</span><span class="event-title">${ev.summary}</span>`;
-                list.appendChild(li);
+                const time = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', {hour:'2-digit', minute:'2-digit'}) : 'All day';
+                const row = document.createElement('div');
+                row.className = 'event-row';
+                const cat = getCategoryClass(ev.summary);
+                row.innerHTML = `
+                    <div class="event-meta"><span class="time-tag">${time}</span><div class="category-dot ${cat}"></div></div>
+                    <div class="event-main"><h4>${ev.summary}</h4></div>
+                `;
+                list.appendChild(row);
             });
         }
-        
-        // Render Mail Preview
-        const mailRes = await fetch('/api/emails');
-        const mailData = await mailRes.json();
-        document.getElementById('mail-content-preview').innerHTML = `<p style="font-size: 0.9rem; opacity: 0.8;">${mailData.summary?.substring(0, 100)}...</p>`;
-
-    } catch (err) {
-        console.error(err);
-    }
+    } catch (err) { console.error(err); }
 }
 
-// -- DATA LOADING (CALENDAR) --
-async function loadFullAgenda() {
-    const list = document.getElementById('full-agenda-list');
-    list.innerHTML = '<div class="loading"><div class="skeleton" style="height: 50px; margin-bottom: 10px;"></div><div class="skeleton" style="height: 50px;"></div></div>';
+function renderWeather(data) {
+    if (data.error) return;
+    document.getElementById('temp-val').innerText = `${data.current.temp}°`;
+    document.getElementById('humidity').innerText = data.current.humidity;
+    document.getElementById('wind').innerText = data.current.wind;
+    document.getElementById('weather-desc').innerText = data.current.desc;
+    
+    const icon = document.getElementById('weather-icon-large');
+    const desc = data.current.desc.toLowerCase();
+    if (desc.includes('sun') || desc.includes('clear')) icon.innerText = '☀️';
+    else if (desc.includes('cloud')) icon.innerText = '⛅';
+    else if (desc.includes('rain')) icon.innerText = '🌧️';
+    else if (desc.includes('snow')) icon.innerText = '❄️';
+}
+
+function renderStats(s) {
+    document.getElementById('stat-total').innerText = s.total;
+    document.getElementById('stat-work').innerText = s.categories.work;
+}
+
+function getCategoryClass(title) {
+    title = title.toLowerCase();
+    if (title.includes('reunió') || title.includes('work') || title.includes('feina')) return 'cat-work';
+    if (title.includes('gimnàs') || title.includes('esport') || title.includes('sopar') || title.includes('cine')) return 'cat-leisure';
+    return 'cat-personal';
+}
+
+// -- CALENDAR & SEARCH --
+async function loadFullAgenda(query = '') {
+    const container = document.getElementById('full-agenda-list');
+    if (!query) container.innerHTML = '<div class="loading"><div class="skeleton" style="height:100px;"></div></div>';
     
     try {
-        const res = await fetch('/api/events?max=30');
-        events = await res.json();
-        renderFullAgenda(events);
-    } catch (err) {
-        list.innerHTML = '<p>Error carregant l\'agenda.</p>';
-    }
+        const res = await fetch(`/api/events?max=50`);
+        let allEvents = await res.json();
+        
+        if (query) {
+            allEvents = allEvents.filter(ev => ev.summary.toLowerCase().includes(query.toLowerCase()));
+        }
+        
+        renderFullAgenda(allEvents);
+    } catch (err) { container.innerHTML = '<p>Error.</p>'; }
 }
 
 function renderFullAgenda(items) {
@@ -121,11 +138,10 @@ function renderFullAgenda(items) {
     container.innerHTML = '';
     
     if (items.length === 0) {
-        container.innerHTML = '<p style="text-align: center; opacity: 0.5; padding: 40px;">No hi ha esdeveniments propers.</p>';
+        container.innerHTML = '<p style="text-align:center; opacity:0.5; padding:40px;">No events found.</p>';
         return;
     }
 
-    // Group by date
     const groups = {};
     items.forEach(ev => {
         const d = new Date(ev.start.dateTime || ev.start.date);
@@ -136,21 +152,18 @@ function renderFullAgenda(items) {
 
     Object.keys(groups).forEach(date => {
         const groupDiv = document.createElement('div');
-        groupDiv.className = 'agenda-day-group';
-        groupDiv.innerHTML = `<h3 class="day-title">${date.toUpperCase()}</h3>`;
+        groupDiv.className = 'glass-card';
+        groupDiv.style.marginBottom = '24px';
+        groupDiv.innerHTML = `<h3 class="day-title" style="margin-bottom:15px; color:var(--accent-primary); font-size:0.9rem;">${date.toUpperCase()}</h3>`;
         
         groups[date].forEach(ev => {
-            const time = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', {hour:'2-digit', minute:'2-digit'}) : 'Tot el dia';
+            const time = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('ca-ES', {hour:'2-digit', minute:'2-digit'}) : 'All day';
             const item = document.createElement('div');
-            item.className = 'agenda-item glass';
+            item.className = 'event-row';
             item.innerHTML = `
-                <div class="agenda-info">
-                    <span class="agenda-time">${time}</span>
-                    <span class="agenda-title">${ev.summary}</span>
-                </div>
-                <div class="agenda-actions">
-                    <button onclick="deleteEvent('${ev.id}')">🗑️</button>
-                </div>
+                <div class="event-meta"><span class="time-tag">${time}</span></div>
+                <div class="event-main"><h4>${ev.summary}</h4></div>
+                <button onclick="deleteEvent('${ev.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i class="lucide-trash-2"></i></button>
             `;
             groupDiv.appendChild(item);
         });
@@ -159,18 +172,25 @@ function renderFullAgenda(items) {
 }
 
 window.deleteEvent = async (id) => {
-    tg.showConfirm("Vols esborrar aquest esdeveniment?", async (ok) => {
+    tg.showConfirm("Delete this event?", async (ok) => {
         if (ok) {
             tg.HapticFeedback.notificationOccurred('warning');
-            try {
-                await fetch(`/api/events/${id}`, { method: 'DELETE' });
-                loadFullAgenda();
-            } catch (err) {
-                tg.showAlert("No s'ha pogut esborrar.");
-            }
+            await fetch(`/api/events/${id}`, { method: 'DELETE' });
+            loadFullAgenda();
         }
     });
 };
+
+// -- SEARCH TOGGLE --
+document.getElementById('search-toggle').addEventListener('click', () => {
+    const area = document.getElementById('search-area');
+    area.classList.toggle('hidden');
+    if (!area.classList.contains('hidden')) document.getElementById('global-search').focus();
+});
+
+document.getElementById('global-search').addEventListener('input', (e) => {
+    if (currentTab === 'calendar') loadFullAgenda(e.target.value);
+});
 
 // -- AI CHAT --
 const chatInput = document.getElementById('chat-input');
@@ -183,23 +203,10 @@ async function sendAiMessage() {
     const text = chatInput.value.trim();
     if (!text) return;
     
-    tg.HapticFeedback.impactOccurred('light');
-    
-    // Add user message
-    const userMsg = document.createElement('div');
-    userMsg.className = 'msg user';
-    userMsg.innerText = text;
-    chatMessages.appendChild(userMsg);
+    appendMessage('user', text);
     chatInput.value = '';
-    chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    chatHistory += `Usuari: ${text}\n`;
-    
-    // Add loading bot message
-    const botMsg = document.createElement('div');
-    botMsg.className = 'msg bot';
-    botMsg.innerText = '...';
-    chatMessages.appendChild(botMsg);
+    const botMsgDiv = appendMessage('bot', 'Typing...');
     
     try {
         const res = await fetch('/api/ai-chat', {
@@ -208,52 +215,42 @@ async function sendAiMessage() {
             body: JSON.stringify({ message: text, history: chatHistory })
         });
         const data = await res.json();
-        
-        botMsg.innerText = data.reply_message || "No he pogut respondre.";
-        chatHistory += `Bot: ${botMsg.innerText}\n`;
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-    } catch (err) {
-        botMsg.innerText = "Error de connexió.";
+        botMsgDiv.innerText = data.reply_message;
+        chatHistory += `User: ${text}\nBot: ${data.reply_message}\n`;
+    } catch (err) { botMsgDiv.innerText = "Error."; }
+}
+
+function appendMessage(role, text) {
+    const msg = document.createElement('div');
+    msg.className = `msg ${role}`;
+    msg.innerText = text;
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    tg.HapticFeedback.impactOccurred('light');
+    return msg;
+}
+
+// -- VOICE RECORDING (SIMULATED) --
+document.getElementById('record-voice').addEventListener('click', () => {
+    isRecording = !isRecording;
+    const btn = document.getElementById('record-voice');
+    if (isRecording) {
+        btn.parentElement.parentElement.classList.add('recording');
+        tg.HapticFeedback.notificationOccurred('success');
+    } else {
+        btn.parentElement.parentElement.classList.remove('recording');
+        tg.HapticFeedback.impactOccurred('medium');
+        tg.showAlert("Voice analysis is being processed...");
+        // In a real app, we'd use MediaRecorder here.
     }
-}
-
-// -- SETTINGS --
-async function loadPrefs() {
-    try {
-        const res = await fetch('/api/preferences');
-        const prefs = await res.json();
-        document.getElementById('pref-summary-time').value = prefs.summaryTime;
-        document.getElementById('pref-duration').value = prefs.defaultDuration;
-    } catch (err) {}
-}
-
-document.getElementById('save-prefs').addEventListener('click', async () => {
-    tg.HapticFeedback.notificationOccurred('success');
-    const prefs = {
-        summaryTime: document.getElementById('pref-summary-time').value,
-        defaultDuration: parseInt(document.getElementById('pref-duration').value)
-    };
-    await fetch('/api/preferences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(prefs)
-    });
-    tg.showAlert("Preferències guardades!");
 });
 
-document.getElementById('reauth-btn').addEventListener('click', () => {
-    tg.openLink(window.location.origin + '/auth');
-});
-
-// -- MODAL ADD EVENT --
+// -- MODAL --
 const modal = document.getElementById('event-modal');
-document.querySelectorAll('.add-btn').forEach(b => b.addEventListener('click', () => {
+document.querySelector('.add-btn').addEventListener('click', () => {
     modal.classList.remove('hidden');
-    // Set default date to today
     document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
-}));
-
+});
 document.getElementById('close-modal').addEventListener('click', () => modal.classList.add('hidden'));
 
 document.getElementById('submit-event').addEventListener('click', async () => {
@@ -261,29 +258,22 @@ document.getElementById('submit-event').addEventListener('click', async () => {
     const date = document.getElementById('ev-date').value;
     const time = document.getElementById('ev-time').value;
     
-    if (!title || !date) return tg.showAlert("Falta el títol o la data.");
+    if (!title || !date) return tg.showAlert("Title and date required.");
     
+    await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventData: { title, date, time } })
+    });
+    modal.classList.add('hidden');
     tg.HapticFeedback.notificationOccurred('success');
-    
-    try {
-        await fetch('/api/events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ eventData: { title, date, time } })
-        });
-        modal.classList.add('hidden');
-        if (currentTab === 'calendar') loadFullAgenda();
-        else loadHomeData();
-    } catch (err) {
-        tg.showAlert("Error creant l'esdeveniment.");
-    }
+    if (currentTab === 'calendar') loadFullAgenda();
+    else loadHomeData();
 });
 
 // -- STARTUP --
 loadHomeData();
-loadPrefs();
 
-// Main Button
-tg.MainButton.setText('TANCAR APP');
+tg.MainButton.setParams({ text: 'EXIT', color: '#ff4d4d' });
 tg.MainButton.show();
 tg.MainButton.onClick(() => tg.close());

@@ -8,7 +8,7 @@ import { ManagerAgent } from './agents/ManagerAgent.js';
 import { MailAgent } from './agents/MailAgent.js';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { fetchWeatherDetailed } from './services/weather.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,11 +61,47 @@ app.delete('/api/events/:id', async (req, res) => {
   }
 });
 
-// ⛅ Weather
-app.get('/api/weather', async (req, res) => {
+// ⛅ Weather Detailed
+app.get('/api/weather/detailed', async (req, res) => {
   try {
-    const weather = await WeatherAgent.getWeather();
-    res.json({ text: weather });
+    const weather = await fetchWeatherDetailed();
+    res.json(weather);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 📊 Stats
+app.get('/api/stats', async (req, res) => {
+  try {
+    const today = new Date();
+    const in7Days = new Date();
+    in7Days.setDate(today.getDate() + 7);
+    
+    const events = await listUpcomingEvents(100, today.toISOString().split('T')[0], in7Days.toISOString().split('T')[0]);
+    
+    const stats = {
+      total: events.length,
+      byDay: {},
+      categories: {
+        work: 0,
+        personal: 0,
+        leisure: 0,
+        other: 0
+      }
+    };
+    
+    events.forEach(ev => {
+      const day = new Date(ev.start.dateTime || ev.start.date).getDay();
+      stats.byDay[day] = (stats.byDay[day] || 0) + 1;
+      
+      const title = (ev.summary || '').toLowerCase();
+      if (title.includes('reunió') || title.includes('work') || title.includes('feina')) stats.categories.work++;
+      else if (title.includes('gimnàs') || title.includes('esport') || title.includes('sopar')) stats.categories.leisure++;
+      else stats.categories.personal++;
+    });
+    
+    res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

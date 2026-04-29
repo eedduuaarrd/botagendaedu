@@ -11,7 +11,7 @@ export async function fetchRecentEmails(hours = 24) {
     const res = await gmail.users.messages.list({
       userId: 'me',
       q: query,
-      maxResults: 50
+      maxResults: 20
     });
 
     const messages = res.data.messages;

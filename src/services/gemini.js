@@ -6,25 +6,45 @@ if (config.geminiApiKey) {
     ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 }
 
-const MODELS = ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+const MODELS = [
+  'gemini-3.1-flash-lite-preview',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash'
+];
 
-async function callGemini(prompt, config = {}) {
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function callGemini(prompt, cfg = {}) {
+  let lastError;
   for (const model of MODELS) {
     try {
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
-        config: { temperature: 0.3, ...config }
+        config: { temperature: 0.3, ...cfg }
       });
       return response.text;
     } catch (error) {
-      const code = error?.message?.match(/"code":(\d+)/)?.[1];
-      console.log(`Model ${model} failed (code ${code}), trying next...`);
-      if (code === '429' || code === '503') continue;
+      lastError = error;
+      // Extraiem el codi d'error del missatge (pot venir com JSON o com status)
+      const codeFromMsg = error?.message?.match(/"code":(\d+)/)?.[1];
+      const httpStatus = error?.status || error?.code || codeFromMsg;
+      console.warn(`⚠️  Model ${model} ha fallat (status: ${httpStatus}) →`, error?.message?.substring(0, 120));
+      if (httpStatus === 429 || httpStatus === '429' || httpStatus === 503 || httpStatus === '503') {
+        // Esperem 3 segons abans de provar el següent model
+        await sleep(3000);
+        continue;
+      }
+      // Qualsevol altre error (401, 400...) no té sentit reintentar amb un altre model
       throw error;
     }
   }
-  throw new Error('All Gemini models failed');
+  console.error('❌ Tots els models de Gemini han fallat. Últim error:', lastError?.message);
+  throw new Error(`Tots els models de Gemini han fallat: ${lastError?.message}`);
 }
 
 export async function parseNaturalLanguage(text, currentDateString, historyStr = "", audioData = null) {
@@ -99,45 +119,44 @@ Missatge de l'Edu: "${text || ''}"`;
 export async function summarizeEmails(emailsText) {
   if (!ai) throw new Error("Gemini API key is not configured");
   
-  // Limitar text per evitar excedir tokens
-  const truncatedEmails = emailsText.substring(0, 8000);
+  // Limitar text per evitar excedir tokens (5000 chars ~= ~1250 tokens, segur per al free tier)
+  const truncatedEmails = emailsText.substring(0, 5000);
   
-  const prompt = `Ets el meu amic de confiança que llegeix els meus correus i me'ls explica en 2 minuts.
-Fes un resum MOLT breu i col·loquial dels correus de les últimes 24h, com si m'ho expliquessis de paraula.
-Agrupa els que no importin en una frase ("molta publicitat i alertes de feina de sempre, res especial").
-Destaca el que de veritat necessito saber.
-Usa emojis però sense passar-te.
-Si no hi ha res interessant, digues-m'ho directament sense floritures.
-Resposta en català col·loquial, super breu i fàcil de llegir d'un cop d'ull.
+  const prompt = `Resumeix aquests correus en català col·loquial, com un WhatsApp entre amics. MOLT breu.
+Agrupa la publicitat/alertes en una frase. Destaca el que realment importa. Màxim 5-6 línies.
 
-CORREUS:
-${truncatedEmails}`;
+CORREUS:\n${truncatedEmails}`;
 
   try {
     return await callGemini(prompt, { temperature: 0.3 });
   } catch (error) {
     console.error('Error resumint correus:', error?.message || error);
-    return "Ostres, no he pogut resumir els correus. Pot ser un tema de quota de la IA.";
+    const isQuota = error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.toLowerCase().includes('rate');
+    if (isQuota) {
+      return "📧 Resum de correus:\n\nOstres, la IA té la quota plena ara mateix 😅 Torna-ho a provar en uns minuts o usa /correus.";
+    }
+    return `📧 Resum de correus:\n\nNo he pogut resumir els correus: ${error?.message?.substring(0, 100) || 'Error desconegut'}.`;
   }
 }
 
 export async function answerEmailQuery(emailsText, userQuestion) {
   if (!ai) throw new Error("Gemini API key is not configured");
   
+  const truncatedEmails = emailsText.substring(0, 5000);
   const prompt = `L'Edu t'ha preguntat això sobre els seus correus recents: "${userQuestion}"
 
 Aquí tens els correus recents:
-${emailsText}
+${truncatedEmails}
 
-Respon de forma MOLT breu i directa, com si li ho expliquessis de viva veu a un amic.
-Si trobes el que busca, digues-ho clar. Si no, digues "No he vist res sobre això als teus correus".
-Català col·loquial, usa algun emoji, màxim 2-3 frases.`;
+Respon de forma MOLT breu i directa en català col·loquial. Si no ho trobes, digues "No he vist res sobre això als teus correus".`;
 
   try {
     return await callGemini(prompt, { temperature: 0.2 });
   } catch (error) {
     console.error('Error responent consulta correus:', error?.message || error);
-    return "Ostres, no he pogut analitzar els correus. Pot ser un tema de quota.";
+    const isQuota = error?.message?.includes('429') || error?.message?.includes('quota');
+    if (isQuota) return "Ostres, no he pogut analitzar els correus perquè la IA està saturada ara mateix 😅";
+    return "Ostres, no he pogut analitzar els correus en aquest moment.";
   }
 }
 
@@ -166,7 +185,9 @@ Normes:
     return await callGemini(prompt, { temperature: 0.6 });
   } catch (error) {
     console.error('Error generant salutació diària:', error?.message || error);
-    return `Ei Edu! Ha fallat el meu cervell digital però aquí tens el teu dia:\n${eventsText}\n\nTemps: ${weatherText}`;
+    const isQuota = error?.message?.includes('429') || error?.message?.includes('quota');
+    const quotaMsg = isQuota ? "\n\n(Sembla que tinc la quota de la IA plena, així que seré més breu! 😅)" : "";
+    return `Ei Edu! Ha fallat el meu cervell digital però aquí tens el teu dia:${quotaMsg}\n\n${eventsText}\n\n${weatherText}`;
   }
 }
 
@@ -183,6 +204,8 @@ Digue-li si ha d'agafar jaqueta, paraigua, o si pot anar en màniga curta. Catal
     return await callGemini(prompt, { temperature: 0.4 });
   } catch (error) {
     console.error('Error generant resposta temps:', error?.message || error);
+    const isQuota = error?.message?.includes('429') || error?.message?.includes('quota');
+    if (isQuota) return `☁️ ${weatherText}\n\n(Perdona, la IA està saturada i no puc fer el resum bonic!)`;
     return `☁️ ${weatherText}`;
   }
 }

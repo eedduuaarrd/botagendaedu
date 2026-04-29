@@ -6,6 +6,8 @@ if (config.geminiApiKey) {
     ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 }
 
+const MODEL = 'gemini-3.1-flash-lite';
+
 export async function parseNaturalLanguage(text, currentDateString, historyStr = "", audioData = null) {
   if (!ai) throw new Error("Gemini API key is not configured");
 
@@ -41,6 +43,9 @@ REGLES (segueix-les sempre):
 - MEMÒRIA: Si l'Edu vol que recordis alguna cosa ("recorda que...", "guarda que...") → intent "save_memory".
 - MEMÒRIA: Si l'Edu et pregunta quelcom que t'havia dit abans ("on vaig guardar...", "què em va dir...", "recordes que...") → intent "query_memory".
 - Tolera errors ortogràfics, dialectes i llengua col·loquial.
+- Si rep un ÀUDIO, transcriu i dedueix la intenció.
+- Usa l'historial per entendre context. Si diu "mou-ho", referencia l'event del que parlava.
+- Hores sempre en format 24h.
 - reply_message: curt, directe, emojis, com un WhatsApp entre amics. En català sempre.
 
 HISTORIAL:
@@ -48,32 +53,28 @@ ${historyStr || "(cap)"}
 
 Missatge de l'Edu: "${text || ''}"`;
 
-  let parts = [{ text: prompt }];
+  let contents;
   if (audioData) {
-    parts.unshift({
-      inlineData: {
-        data: audioData.base64,
-        mimeType: audioData.mimeType
-      }
-    });
+    contents = [
+      { inlineData: { data: audioData.base64, mimeType: audioData.mimeType } },
+      { text: prompt }
+    ];
+  } else {
+    contents = prompt;
   }
 
   try {
-    const model = ai.getGenerativeModel({ 
-      model: 'gemini-3.1-flash-lite',
-      generationConfig: { responseMimeType: "application/json" }
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: contents,
+      config: {
+        temperature: 0.1,
+        responseMimeType: 'application/json'
+      }
     });
 
-    const result = await model.generateContent({ contents: parts });
-    const response = await result.response;
-    const rawJson = response.text();
-    if (rawJson.startsWith('\`\`\`json')) {
-      rawJson = rawJson.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
-    } else if (rawJson.startsWith('\`\`\`')) {
-      rawJson = rawJson.replace(/\`\`\`/g, '');
-    }
-
-    return JSON.parse(rawJson.trim());
+    console.log('Gemini raw response:', response.text);
+    return JSON.parse(response.text);
   } catch (error) {
     console.error('Error cridant a Gemini:', error);
     if (error.status === 429) {
@@ -102,10 +103,12 @@ CORREUS:
 ${emailsText}`;
 
   try {
-    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: { temperature: 0.3 }
+    });
+    return response.text;
   } catch (error) {
     console.error('Error resumint correus:', error);
     return "Ostres, m'he liat amb els correus. Torna-ho a provar!";
@@ -125,10 +128,12 @@ Si trobes el que busca, digues-ho clar. Si no, digues "No he vist res sobre aix�
 Català col·loquial, usa algun emoji, màxim 2-3 frases.`;
 
   try {
-    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: { temperature: 0.2 }
+    });
+    return response.text;
   } catch (error) {
     console.error('Error responent consulta correus:', error);
     return "Ostres, m'he liat buscant els correus. Torna-ho a provar!";
@@ -157,10 +162,12 @@ Normes:
 - Màxim 5-6 línies en total. Breu però complet.`;
 
   try {
-    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: { temperature: 0.6 }
+    });
+    return response.text;
   } catch (error) {
     console.error('Error generant salutació diària:', error);
     return `Ei Edu! Ha fallat el meu cervell digital però aquí tens el teu dia:\n${eventsText}\n\nTemps: ${weatherText}`;
@@ -177,10 +184,12 @@ Respon-li com li explicaries el temps a un amic en un WhatsApp. Breu, directe i 
 Digue-li si ha d'agafar jaqueta, paraigua, o si pot anar en màniga curta. Català i emojis.`;
 
   try {
-    const model = ai.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: { temperature: 0.4 }
+    });
+    return response.text;
   } catch (error) {
     console.error('Error generant resposta temps:', error);
     return `☁️ ${weatherText}`;

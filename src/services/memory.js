@@ -49,9 +49,12 @@ L'Edu pregunta: "${query}"
 
 Troba la memòria més rellevant i respon de forma natural. Si no n'hi ha cap de rellevant, digues que no ho recordes.`;
 
-    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite',
+      contents: prompt,
+      config: { temperature: 0.3 }
+    });
+    return response.text;
   }
 
   static async delete(id) {

@@ -138,10 +138,11 @@ Escriu /avui per veure el teu dia o parla'm normal com un amic. Com et puc ajuda
       const historyStr = getMemoryStr(chatId);
       
       const data = await ManagerAgent.processUserMessage(text, currentDateString, historyStr, audioData);
+      console.log('Intent detectat:', JSON.stringify(data));
 
       if (!data || data.confidence < 0.4) {
         updateMemory(chatId, "Bot", "No ho he entès bé.");
-        return bot.sendMessage(chatId, "Ei, no t'he entès gaire bé. 🤔 Pots repetir-ho d'una altra manera?");
+        return bot.sendMessage(chatId, data?.reply_message || "Ei, no t'he entès gaire bé. 🤔 Pots repetir-ho d'una altra manera?");
       }
 
       switch (data.intent) {
@@ -193,7 +194,8 @@ Escriu /avui per veure el teu dia o parla'm normal com un amic. Com et puc ajuda
       }
     } catch (error) {
       console.error("Error processant missatge:", error);
-      if (error.message.includes('auth') || error.message.includes('credentials') || error.status === 401) {
+      const errMsg = error?.message || '';
+      if (errMsg.includes('auth') || errMsg.includes('credentials') || error?.status === 401) {
         const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${config.port}`;
         bot.sendMessage(chatId, `🔑 Sembla que no tinc permís per accedir al teu Google Calendar o Gmail. Si us plau, torna'm a autoritzar aquí:\n${baseUrl}/auth`);
       } else {

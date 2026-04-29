@@ -7,7 +7,6 @@ import { CalendarAgent } from '../agents/CalendarAgent.js';
 import { MailAgent } from '../agents/MailAgent.js';
 import { WeatherAgent } from '../agents/WeatherAgent.js';
 import { MemoryAgent } from '../agents/MemoryAgent.js';
-import { CoderAgent } from '../agents/CoderAgent.js';
 import { createEvent, listUpcomingEvents, deleteEventById, searchEvent, updateEvent } from '../services/calendar.js';
 import { addHours } from 'date-fns';
 
@@ -48,11 +47,6 @@ function getMemoryStr(chatId) {
 
 function saveChatId(chatId) {
   fs.writeFileSync('chat_id.txt', chatId.toString(), 'utf8');
-}
-
-function isAuthorized(chatId) {
-  if (!config.authorizedTelegramId) return true; // Si no està configurat, permetem a tothom (per ara)
-  return chatId.toString() === config.authorizedTelegramId.toString();
 }
 
 export function setupBot() {
@@ -137,10 +131,6 @@ Com vols procedir avui?`;
     const chatId = msg.chat.id;
     const text = msg.text || '';
     const voice = msg.voice;
-    
-    if (!isAuthorized(chatId)) {
-      return bot.sendMessage(chatId, "🚫 No tens permís per utilitzar aquest bot.");
-    }
 
     if (!text && !voice) return;
     if (text.startsWith('/')) return;
@@ -215,10 +205,6 @@ Com vols procedir avui?`;
           updateMemory(chatId, "Bot", "Busca en la memòria");
           await MemoryAgent.handleQuery(bot, chatId, text);
           break;
-        case 'code_management':
-          updateMemory(chatId, "Bot", "Executant acció de sistema");
-          await CoderAgent.handleRequest(bot, chatId, data);
-          break;
         case 'general_chat':
           updateMemory(chatId, "Bot", data.reply_message);
           bot.sendMessage(chatId, data.reply_message || "Ei! En què et puc ajudar? 😊");
@@ -243,9 +229,6 @@ Com vols procedir avui?`;
     const messageId = query.message.message_id;
     const actionId = query.data; 
 
-    if (!isAuthorized(chatId)) {
-      return bot.answerCallbackQuery(query.id, { text: "🚫 No autoritzat." });
-    }
     const action = pendingActions.get(actionId);
     
     if (!action) {

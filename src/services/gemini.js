@@ -14,7 +14,7 @@ Data i hora actual: ${currentDateString}
 
 Retorna ÚNICAMENT un JSON vàlid:
 {
-  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "query_emails" | "query_weather" | "general_chat",
+  "intent": "create_event" | "update_event" | "delete_event" | "query_agenda" | "query_free_time" | "update_preferences" | "query_emails" | "query_weather" | "save_memory" | "query_memory" | "general_chat",
   "target_event_reference": "títol o referència de l'event a modificar/esborrar",
   "email_query": "paraula clau per buscar als correus (null si no aplica)",
   "title": "Títol descriptiu de l'event",
@@ -38,6 +38,8 @@ REGLES (segueix-les sempre):
 - PREFERÈNCIES: Si vol canviar l'hora del resum o la durada de les reunions → intent "update_preferences".
 - TEMPS: Si pregunta el temps (avui, demà, cap de setmana...) → intent "query_weather" SEMPRE. Tens accés al clima.
 - CORREUS: Si demana resum, buscar correus o demana què diuen els emails → intent "query_emails".
+- MEMÒRIA: Si l'Edu vol que recordis alguna cosa ("recorda que...", "guarda que...") → intent "save_memory".
+- MEMÒRIA: Si l'Edu et pregunta quelcom que t'havia dit abans ("on vaig guardar...", "què em va dir...", "recordes que...") → intent "query_memory".
 - Tolera errors ortogràfics, dialectes i llengua col·loquial.
 - reply_message: curt, directe, emojis, com un WhatsApp entre amics. En català sempre.
 

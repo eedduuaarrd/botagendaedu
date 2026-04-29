@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edu Agenda - TMA</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-mode">
+    <div id="app">
+        <header>
+            <div class="user-info">
+                <img id="user-photo" src="https://via.placeholder.com/40" alt="Avatar">
+                <div>
+                    <h1 id="greeting">Hola, Edu!</h1>
+                    <p id="date-display">Dimecres, 29 d'abril</p>
+                </div>
+            </div>
+            <div class="status-badge" id="weather-badge">
+                <span id="temp-val">25°C</span>
+                <span id="weather-icon">☀️</span>
+            </div>
+        </header>
+
+        <main>
+            <section class="card glass" id="daily-summary">
+                <h2>🌅 Resum del dia</h2>
+                <div id="summary-content">
+                    <p class="loading">Carregant resum...</p>
+                </div>
+            </section>
+
+            <section class="card-grid">
+                <div class="card glass" id="agenda-card">
+                    <div class="card-header">
+                        <h2>📅 Agenda</h2>
+                        <button class="btn-icon" id="add-event-btn">+</button>
+                    </div>
+                    <ul id="event-list">
+                        <li class="loading">Buscant events...</li>
+                    </ul>
+                </div>
+
+                <div class="card glass" id="mail-card">
+                    <h2>📧 Correus</h2>
+                    <div id="mail-summary">
+                        <p class="loading">Llegint correus...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-tab="home">
+                <span class="icon">🏠</span>
+                <span>Inici</span>
+            </button>
+            <button class="nav-item" data-tab="calendar">
+                <span class="icon">🗓️</span>
+                <span>Calendari</span>
+            </button>
+            <button class="nav-item" data-tab="ai">
+                <span class="icon">🧠</span>
+                <span>IA Chat</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal per afegir event (opcional per ara) -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content glass">
+            <h3>Nou Esdeveniment</h3>
+            <input type="text" placeholder="Què vols fer?">
+            <div class="modal-actions">
+                <button id="close-modal">Cancel·la</button>
+                <button id="save-event" class="btn-primary">Guarda</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

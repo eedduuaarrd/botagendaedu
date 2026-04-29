@@ -74,17 +74,24 @@ export function setupBot() {
 
   bot.onText(/\/start/, (msg) => {
     saveChatId(msg.chat.id);
-    const welcome = `Hola Edu! 👋 Sóc el teu assistent personal intel·ligent.
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${config.port}`;
+    
+    const welcome = `Hola Edu! 👋 Sóc el teu assistent personal de **Premium**.
 
-Puc fer moltes coses per tu:
-📅 **Agenda:** Crear, esborrar o consultar esdeveniments.
-📧 **Gmail:** Resumir-te els correus del dia o buscar info específica.
-🧠 **Memòria:** Recordar coses que em diguis (prova: "Recorda que la clau és 1234").
-☁️ **Temps:** Dir-te quin temps farà a Balaguer.
-🎙️ **Veu:** Entenc les teves notes de veu!
+He preparat una experiència completa per a tu. Pots parlar-me normalment o obrir la meva **App de Telegram** per veure-ho tot més clar.
 
-Escriu /avui per veure el teu dia o parla'm normal com un amic. Com et puc ajudar? 😊`;
-    bot.sendMessage(msg.chat.id, welcome, { parse_mode: 'Markdown' });
+Què vols fer avui? 😊`;
+
+    bot.sendMessage(msg.chat.id, welcome, { 
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🚀 Obrir l'App de l'Agenda", web_app: { url: baseUrl } }],
+          [{ text: "📅 Veure Agenda d'avui", callback_data: 'query_today' }, { text: "📧 Resum correus", callback_data: 'query_mails' }],
+          [{ text: "☁️ Temps a Balaguer", callback_data: 'query_weather' }]
+        ]
+      }
+    });
   });
 
   bot.onText(/\/correus/, async (msg) => {
@@ -253,6 +260,14 @@ Escriu /avui per veure el teu dia o parla'm normal com un amic. Com et puc ajuda
       } else if (action.type === 'update') {
          await updateEvent(action.eventId, action.originalEvent, action.data);
          bot.sendMessage(chatId, "✅ Actualitzat! El teu calendari ja ho té al dia 📅", { parse_mode: 'HTML' });
+      } else if (actionId === 'query_today') {
+         await sendDailyBriefing(chatId);
+      } else if (actionId === 'query_mails') {
+         const summary = await MailAgent.getDailyEmailSummary();
+         bot.sendMessage(chatId, summary);
+      } else if (actionId === 'query_weather') {
+         const tempsStr = await WeatherAgent.getWeather();
+         bot.sendMessage(chatId, tempsStr);
       }
     } catch (error) {
       console.error(error);

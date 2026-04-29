@@ -10,11 +10,4 @@ export const config = {
     redirectUri: process.env.GOOGLE_REDIRECT_URI,
   },
   port: process.env.PORT || 3000,
-  ssh: {
-    host: process.env.SSH_HOST,
-    port: parseInt(process.env.SSH_PORT || '22'),
-    username: process.env.SSH_USER,
-    password: process.env.SSH_PASSWORD,
-    privateKey: process.env.SSH_KEY,
-  }
 };

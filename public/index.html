@@ -36,26 +36,26 @@
                 </div>
 
                 <!-- Briefing Card -->
-                <div class="section-title">Resum Executiu</div>
-                <div class="card" id="summary-content" style="font-size: 0.9rem; opacity: 0.9;">
+                <div class="section-title">📊 Resum Executiu</div>
+                <div class="card" id="summary-content" style="font-size: 0.9rem; line-height: 1.6; border-left: 2px solid var(--accent);">
                     Carregant briefing...
                 </div>
 
                 <!-- Split View: Emails & Tasks -->
                 <div style="display: grid; grid-template-columns: 1fr; gap: 0px;">
                     <div>
-                        <div class="section-title">Emails Recents</div>
-                        <div class="card" id="email-list-container">
+                        <div class="section-title">📧 Emails Recents</div>
+                        <div class="card" id="email-list-container" style="max-height: 250px; overflow-y: auto;">
                             <div class="text-center" style="opacity: 0.5; padding: 20px;">Busca de correus...</div>
                         </div>
                     </div>
                     
                     <div>
-                        <div class="section-title">Tasques Pendents</div>
+                        <div class="section-title">📝 Tasques Pendents</div>
                         <div class="card">
                             <div id="task-list-container"></div>
                             <div class="mt-4" style="display: flex; gap: 8px;">
-                                <input type="text" id="new-task-input" class="input-flat" placeholder="Nova tasca..." style="padding: 8px 12px;">
+                                <input type="text" id="new-task-input" class="input-flat" placeholder="Afegir tasca ràpida..." style="padding: 8px 12px; font-size: 0.85rem;">
                                 <button id="add-task-btn" style="background: white; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: 700;">+</button>
                             </div>
                         </div>
@@ -63,43 +63,48 @@
                 </div>
 
                 <!-- Next Events -->
-                <div class="section-title">Propers Esdeveniments</div>
+                <div class="section-title">🗓️ Propers Esdeveniments</div>
                 <div class="card" id="preview-list"></div>
             </section>
 
             <!-- TAB: CALENDAR -->
             <section id="tab-calendar" class="tab-content">
-                <div class="section-title">Línia de Temps</div>
+                <div class="section-title">Timeline d'Activitats</div>
                 <div id="full-agenda-list"></div>
             </section>
 
             <!-- TAB: ASSISTANT -->
             <section id="tab-ai" class="tab-content">
-                <div class="section-title">Assistent Virtual</div>
-                <div id="chat-messages"></div>
-                <div class="mt-4" style="display: flex; gap: 10px;">
-                    <input type="text" id="chat-input" class="input-flat" placeholder="En què et puc ajudar?">
-                    <button id="send-msg" class="btn-action" style="width: auto;">Enviar</button>
+                <div class="section-title">🤖 Assistent Intel·ligent</div>
+                <div id="chat-messages" class="card" style="height: 60vh; margin-bottom: 12px; padding: 15px;"></div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="chat-input" class="input-flat" placeholder="Escriu la teva consulta...">
+                    <button id="send-msg" class="btn-action" style="width: auto; padding: 0 20px;">Enviar</button>
+                </div>
+                <div style="margin-top: 12px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
+                    <button class="quick-cmd" onclick="quickAi('Què tinc avui?')">Avui</button>
+                    <button class="quick-cmd" onclick="quickAi('Resumeix emails')">Emails</button>
+                    <button class="quick-cmd" onclick="quickAi('Tinc temps lliure demà?')">Temps Lliure</button>
                 </div>
             </section>
 
             <!-- TAB: SETTINGS -->
             <section id="tab-settings" class="tab-content">
-                <div class="section-title">Configuració</div>
+                <div class="section-title">⚙️ Configuració del Sistema</div>
                 <div class="card">
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">HORA DEL BRIEFING</label>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Hora del Resum Diari</label>
                         <input type="time" id="pref-summary-time" class="input-flat">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">DURADA PER DEFECTE (MIN)</label>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Durada reunions (min)</label>
                         <input type="number" id="pref-duration" class="input-flat">
                     </div>
-                    <button id="save-prefs" class="btn-action mt-4">Guardar Canvis</button>
+                    <button id="save-prefs" class="btn-action mt-4">Sincronitzar Preferències</button>
                 </div>
-                <div class="card" style="border-color: rgba(239, 68, 68, 0.3);">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--danger); margin-bottom: 8px;">ZONA CRÍTICA</div>
-                    <button id="reauth-btn" class="btn-action" style="background: var(--danger); color: white;">Reiniciar Autorització</button>
+                <div class="card" style="border-color: rgba(239, 68, 68, 0.2);">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--danger); margin-bottom: 12px; text-transform: uppercase;">Manteniment</div>
+                    <button id="reauth-btn" class="btn-action" style="background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2);">Reiniciar Google Auth</button>
                 </div>
             </section>
         </main>
@@ -107,9 +112,9 @@
         <!-- SYSTEM NAV -->
         <nav class="system-nav">
             <button class="nav-link active" data-tab="home">Inici</button>
-            <button class="nav-link" data-tab="calendar">Planer</button>
+            <button class="nav-link" data-tab="calendar">Agenda</button>
             <button class="nav-link" data-tab="ai">IA</button>
-            <button class="nav-link" data-tab="settings">Config</button>
+            <button class="nav-link" data-tab="settings">Estat</button>
         </nav>
     </div>
 
@@ -117,26 +122,26 @@
     <button class="fab add-btn">+</button>
 
     <!-- MODAL -->
-    <div id="event-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px;">
-        <div class="card" style="width: 100%; max-width: 400px; padding: 30px;">
-            <h3 style="margin-bottom: 24px;">Nou Esdeveniment</h3>
+    <div id="event-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 24px; font-weight: 700;">Nou Esdeveniment</h3>
             <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">TÍTOL</label>
-                <input type="text" id="ev-title" class="input-flat" placeholder="Reunió...">
+                <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Títol</label>
+                <input type="text" id="ev-title" class="input-flat" placeholder="Introduir títol...">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
                 <div>
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">DATA</label>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Data</label>
                     <input type="date" id="ev-date" class="input-flat">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">HORA</label>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Hora</label>
                     <input type="time" id="ev-time" class="input-flat">
                 </div>
             </div>
-            <div style="display: flex; gap: 12px;">
-                <button id="close-modal" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer;">Cancel·lar</button>
-                <button id="submit-event" class="btn-action">Crear</button>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="close-modal" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; font-size: 0.9rem;">Cancel·lar</button>
+                <button id="submit-event" class="btn-action" style="width: auto; padding: 10px 24px;">Guardar</button>
             </div>
         </div>
     </div>

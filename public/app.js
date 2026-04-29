@@ -29,10 +29,17 @@ document.querySelectorAll('.nav-link').forEach(btn => {
 
 function switchTab(tab) {
     tg.HapticFeedback.selectionChanged();
-    document.querySelector('.nav-link.active').classList.remove('active');
+    
+    // UI Update
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
     document.querySelector(`.nav-link[data-tab="${tab}"]`).classList.add('active');
-    document.querySelector('.tab-content.active').classList.remove('active');
+    
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
+    
+    // Scroll reset for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     currentTab = tab;
     
     if (tab === 'home') loadHomeData();
@@ -234,6 +241,11 @@ function appendMsg(role, text) {
     tg.HapticFeedback.impactOccurred('light');
     return div;
 }
+
+window.quickAi = (text) => {
+    document.getElementById('chat-input').value = text;
+    sendAiMessage();
+};
 
 // -- SETTINGS --
 async function loadPrefs() {

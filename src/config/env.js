@@ -10,4 +10,5 @@ export const config = {
     redirectUri: process.env.GOOGLE_REDIRECT_URI,
   },
   port: process.env.PORT || 3000,
+  authorizedTelegramId: process.env.AUTHORIZED_TELEGRAM_ID,
 };

@@ -25,7 +25,7 @@ body {
     font-family: var(--font-sans);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    padding-bottom: 90px;
+    padding-bottom: 120px;
 }
 
 #app {
@@ -83,6 +83,24 @@ header {
     border-radius: var(--radius);
     padding: 20px;
     margin-bottom: 24px;
+}
+
+.quick-cmd {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-cmd:hover, .quick-cmd:active {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 /* Weather Compact */
@@ -289,21 +307,33 @@ input, button {
     cursor: pointer;
 }
 
-/* Utilities */
-.hidden { display: none; }
-.mt-4 { margin-top: 16px; }
-.text-center { text-align: center; }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Modal System */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    transition: opacity 0.3s ease;
 }
 
-.tab-content {
-    display: none;
-    animation: fadeIn 0.3s ease forwards;
+.modal.hidden {
+    display: none !important;
 }
 
-.tab-content.active {
-    display: block;
+.modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 400px;
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 }

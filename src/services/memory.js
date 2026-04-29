@@ -50,7 +50,7 @@ L'Edu pregunta: "${query}"
 Troba la memòria més rellevant i respon de forma natural. Si no n'hi ha cap de rellevant, digues que no ho recordes.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-flash-lite-preview',
       contents: prompt,
       config: { temperature: 0.3 }
     });

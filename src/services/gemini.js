@@ -6,7 +6,7 @@ if (config.geminiApiKey) {
     ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 }
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.1-flash-lite-preview';
 
 export async function parseNaturalLanguage(text, currentDateString, historyStr = "", audioData = null) {
   if (!ai) throw new Error("Gemini API key is not configured");

@@ -4,39 +4,33 @@ import { config } from '../src/config/env.js';
 const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
 const MODELS_TO_TRY = [
-  'gemini-3.1-flash-lite',
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-2.5-flash',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3.1-flash-lite-preview-0514',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash-lite-preview',
+  'gemini-3-flash',
+  'gemini-3-flash-lite',
 ];
 
 async function testModel(modelName) {
   try {
-    console.log(`\n--- Provant model: ${modelName} ---`);
     const response = await ai.models.generateContent({
       model: modelName,
-      contents: 'Respon NOMÉS amb un JSON: {"intent":"general_chat","reply_message":"hola"}',
-      config: {
-        temperature: 0.1,
-        responseMimeType: 'application/json'
-      }
+      contents: 'Respon NOMÉS: OK',
+      config: { temperature: 0.1 }
     });
-    console.log(`✅ ${modelName} FUNCIONA!`);
-    console.log('Resposta:', response.text);
+    console.log(`✅ ${modelName} → "${response.text.trim()}"`);
     return true;
   } catch (error) {
-    console.log(`❌ ${modelName} FALLA: ${error.message?.substring(0, 100)}`);
+    const code = error?.message?.match(/"code":(\d+)/)?.[1] || '?';
+    console.log(`❌ ${modelName} → code ${code}`);
     return false;
   }
 }
 
 async function main() {
-  console.log('=== Test de models Gemini ===\n');
   for (const model of MODELS_TO_TRY) {
-    const ok = await testModel(model);
-    if (ok) break; // Stop at first working model
+    await testModel(model);
   }
 }
-
 main();
